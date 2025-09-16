@@ -12,7 +12,7 @@
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0%2B-red)](https://www.sqlalchemy.org/)
 [![Misraj AI](https://img.shields.io/badge/By-Misraj%20AI-gold)](https://misraj.ai)
 
-**A comprehensive REST API providing access to the Holy Quran in +323 editions across +50 languages**
+**A comprehensive REST API providing access to the Holy Quran in +300 editions across +50 languages**
 
 **Developed and Maintained by [Misraj AI](https://misraj.ai)**
 
@@ -35,7 +35,7 @@ QuranHub API is a powerful, feature-rich REST API developed by **Misraj AI** tha
 <td>
 
 **Content Coverage**
-- 📚 **+323** Total Editions
+- 📚 **+300** Total Editions
 - 📝 **+235** Text Editions  
 - 🎵 **+88** Audio Editions
 - 📊 **+354,346** Audio Files
