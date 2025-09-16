@@ -1,0 +1,10 @@
+psycopg2
+SQLAlchemy
+fastapi
+uvicorn
+python-json-logger
+cachetools
+typing
+PyArabic
+python-dotenv
+asyncpg
