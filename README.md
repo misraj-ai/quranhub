@@ -55,6 +55,27 @@ QuranHub API is a powerful, feature-rich REST API developed by **Misraj AI** tha
 </tr>
 </table>
 
+## 📖 QuranHub MCP Server
+
+The QuranHub MCP Server provides a rich set of tools for accessing and exploring the Quran programmatically. You can use these tools inside Cursor or any other MCP-compatible client.
+
+### ⚙️ Setup
+
+Add the server to your MCP configuration file:
+
+```json
+{
+  "servers": {
+    "quranhub": {
+      "type": "http",
+      "url": "https://mcp.quranhub.com/mcp"
+    }
+  }
+}
+```
+
+The MCP server provides the same comprehensive tools available in the API, allowing seamless integration with compatible development environments and AI assistants.
+
 ## ✨ Features
 
 ### 🕌 Core Quran Tools
@@ -185,26 +206,6 @@ Basic utility and test functions.
 
 For complete API documentation and additional features, visit [https://qurani.ai](https://qurani.ai)
 
-## 📖 QuranHub MCP Server
-
-The QuranHub MCP Server provides a rich set of tools for accessing and exploring the Quran programmatically. You can use these tools inside Cursor or any other MCP-compatible client.
-
-### ⚙️ Setup
-
-Add the server to your MCP configuration file:
-
-```json
-{
-  "servers": {
-    "quranhub": {
-      "type": "http",
-      "url": "https://mcp.quranhub.com/mcp"
-    }
-  }
-}
-```
-
-The MCP server provides the same comprehensive tools available in the API, allowing seamless integration with compatible development environments and AI assistants.
 
 ## 🚀 Quick Start
 
