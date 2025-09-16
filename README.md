@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![QuranHub Logo](https://qurani.ai/en/app-logo.svg)
+![QuranHub Logo](https://qurani.ai/app-logo.svg)
 
 ![QuranHub Logo](https://img.shields.io/badge/QuranHub-API-00897B?style=for-the-badge)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
