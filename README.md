@@ -291,11 +291,13 @@ curl -X GET "https://api.quranhub.com/v1/ayah/random/editions/quran-uthmani,en.s
 
 ## 📄 License
 
-**© 2025 Misraj AI. All Rights Reserved.**
+**License: NCL — Non-Commercial License**
 
-This project is proprietary software owned by Misraj AI. The source code is made available for viewing and reference purposes only.
+This project is licensed under the Non-Commercial License (NCL). You may use, copy, modify, and distribute this software for non-commercial purposes only.
 
-For licensing inquiries, commercial use, or custom deployments, please contact:
+Commercial use, including but not limited to selling, sublicensing, or using the software as part of a commercial product or service, is strictly prohibited without explicit written permission from Misraj AI.
+
+For commercial licensing, please contact:
 - **Email**: hello@misraj.ai
 - **Website**: [https://misraj.ai](https://misraj.ai)
 
