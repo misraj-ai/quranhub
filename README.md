@@ -5,7 +5,7 @@
 ![QuranHub Logo](https://qurani.ai/app-logo.svg)
 
 ![QuranHub Logo](https://img.shields.io/badge/QuranHub-API-00897B?style=for-the-badge)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![License: NCL](https://img.shields.io/badge/License-NCL-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13%2B-316192)](https://www.postgresql.org/)
