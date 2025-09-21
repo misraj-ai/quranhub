@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, Path, Query
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 from repositories.mutashabihat_repo import get_mutashabihat_for_ayah
 from repositories.ayah_repo import get_an_ayah_by_surah_number
 from .mutashabihat_docs import getMutashabihatPhrasesResponse
@@ -28,23 +29,27 @@ async def get_mutashabihat_phrases_for_ayah_hafs(
 ):
     data = await get_mutashabihat_for_ayah(surah_number, ayah_number, "quran-hafs", limit=limit, offset=offset)
     if not data:
-        return JSONResponse(content={"code": 404, "status": "Not Found", "data": "No mutashabihat phrases found for the given parameters or ayah does not exist in this narration."}, status_code=404)
+        response = JSONResponse(content={"code": 404, "status": "Not Found", "data": "No mutashabihat phrases found for the given parameters or ayah does not exist in this narration."}, status_code=404)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     ayah_meta = await get_an_ayah_by_surah_number(surah_number, ayah_number, "quran-hafs")
     if isinstance(ayah_meta, str):
         ayah_meta = None
 
-    response = {
+    response_data = {
         "code": 200,
         "status": "OK",
         "data": data,
     }
     if ayah_meta:
-        response["number"] = ayah_meta.get("number")
-        response["numberInSurah"] = ayah_meta.get("numberInSurah")
-        response["surah"] = ayah_meta.get("surah")
-        response["edition"] = ayah_meta.get("edition")
-    return JSONResponse(content=response)
+        response_data["number"] = ayah_meta.get("number")
+        response_data["numberInSurah"] = ayah_meta.get("numberInSurah")
+        response_data["surah"] = ayah_meta.get("surah")
+        response_data["edition"] = ayah_meta.get("edition")
+    response = JSONResponse(content=response_data, status_code=200)
+    add_cache_headers(response, cache_tag=f"mutashabihat:{surah_number}:{ayah_number}:hafs")
+    return response
 
 # Endpoint 2: /mutashabihat/{surahNumber}/{ayahNumber}/{editionIdentifier}
 @mutashabihat_router.get(
@@ -62,26 +67,30 @@ async def get_mutashabihat_phrases_for_ayah_hafs(
 async def get_mutashabihat_phrases_for_ayah_edition(
     surah_number: int = Path(..., alias="surahNumber", ge=1, le=114, description="Surah number (1-114). The chapter of the Quran."),
     ayah_number: int = Path(..., alias="ayahNumber", ge=1, description="Ayah number (1-based, within the surah). The verse number in the chapter."),
-    edition_identifier: str = Path(..., alias="editionIdentifier", description="Edition identifier (e.g., 'quran-hafs', 'quran-uthmani', 'ar.abdulbasitmurattal.hafs', etc.). Determines the narration/edition for ayah mapping and text."),
+    editionIdentifier: str = Path(..., alias="editionIdentifier", description="Edition identifier (e.g., 'quran-hafs', 'quran-uthmani', 'ar.abdulbasitmurattal.hafs', etc.). Determines the narration/edition for ayah mapping and text."),
     limit: int = Query(20, ge=1, le=100, description="Maximum number of results to return (default 20, max 100)."),
     offset: int = Query(0, ge=0, description="Number of results to skip for pagination (default 0).")
 ):
-    data = await get_mutashabihat_for_ayah(surah_number, ayah_number, edition_identifier, limit=limit, offset=offset)
+    data = await get_mutashabihat_for_ayah(surah_number, ayah_number, editionIdentifier, limit=limit, offset=offset)
     if not data:
-        return JSONResponse(content={"code": 404, "status": "Not Found", "data": "No mutashabihat phrases found for the given parameters or ayah does not exist in this narration."}, status_code=404)
+        response = JSONResponse(content={"code": 404, "status": "Not Found", "data": "No mutashabihat phrases found for the given parameters or ayah does not exist in this narration."}, status_code=404)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
-    ayah_meta = await get_an_ayah_by_surah_number(surah_number, ayah_number, edition_identifier)
+    ayah_meta = await get_an_ayah_by_surah_number(surah_number, ayah_number, editionIdentifier)
     if isinstance(ayah_meta, str):
         ayah_meta = None
 
-    response = {
+    response_data = {
         "code": 200,
         "status": "OK",
         "data": data,
     }
     if ayah_meta:
-        response["number"] = ayah_meta.get("number")
-        response["numberInSurah"] = ayah_meta.get("numberInSurah")
-        response["surah"] = ayah_meta.get("surah")
-        response["edition"] = ayah_meta.get("edition")
-    return JSONResponse(content=response)
+        response_data["number"] = ayah_meta.get("number")
+        response_data["numberInSurah"] = ayah_meta.get("numberInSurah")
+        response_data["surah"] = ayah_meta.get("surah")
+        response_data["edition"] = ayah_meta.get("edition")
+    response = JSONResponse(content=response_data, status_code=200)
+    add_cache_headers(response, cache_tag=f"mutashabihat:{surah_number}:{ayah_number}:{editionIdentifier}")
+    return response

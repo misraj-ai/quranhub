@@ -1,3 +1,53 @@
+# --- New endpoint: /tafsir/{editionIdentifier} ---
+getTafsirEditionByIdentifierResponse = {
+    200: {
+        "description": "Successful Response - Single tafsir edition metadata, matching the canonical tafsir edition response shape.",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 200,
+                    "status": "OK",
+                    "data": {
+                        "identifier": "ar.mukhtasar",
+                        "language": "ar",
+                        "name": "المختصر في التفسير",
+                        "englishName": "Al-Mukhtasar",
+                        "format": "text",
+                        "type": "tafsir",
+                        "direction": "rtl",
+                        "narratorIdentifier": None,
+                        "imageUrl": "https://quranhub.b-cdn.net/quran/images/tafsirs/al-mukhtasar.jpg"
+                    }
+                }
+            }
+        }
+    },
+    404: {
+        "description": "Not Found - Edition identifier does not exist or is not a tafsir edition",
+        "content": {
+            "application/json": {
+                "examples": {
+                    "not_found": {
+                        "summary": "Edition not found",
+                        "value": {
+                            "code": 404,
+                            "status": "Not Found",
+                            "data": "Edition not found"
+                        }
+                    },
+                    "not_tafsir": {
+                        "summary": "Edition is not tafsir",
+                        "value": {
+                            "code": 404,
+                            "status": "Not Found",
+                            "data": "Edition is not tafsir"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 # Enhanced Edition API Documentation
 # Updated response examples based on current API structure and database samples
 
@@ -585,6 +635,61 @@ getTheAudioEditionByNarratorIdentifierResponse = {
                     "code": 400,
                     "status": "Error",
                     "data": "Something wrong happened: No audio editions found for this narrator"
+                }
+            }
+        }
+    }
+}
+
+# --- New endpoint: /audio/{editionIdentifier} ---
+getDistinctAudioEditionByIdentifierResponse = {
+    200: {
+        "description": "Successful Response - Single audio edition with reciter and narration details, matching the canonical audio edition response shape.",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 200,
+                    "status": "OK",
+                    "data": {
+                        "identifier": "ar.abdullahbasfar.hafs",
+                        "language": "ar",
+                        "name": "عبد الله بصفر",
+                        "englishName": "Abdullah Basfar",
+                        "format": "audio",
+                        "type": "versebyverse",
+                        "direction": "rtl",
+                        "narratorIdentifier": "quran-hafs",
+                        "description": {
+                            "ar": "عبد الله بصفر: قارئ سعودي بارز وأستاذ مشارك في جامعة الملك عبد العزيز بجدة. الأمين العام السابق للهيئة العالمية للكتاب والسنة، معروف بصوته العذب وإسهاماته العلمية.",
+                            "en": "Abdullah Basfar: Prominent Saudi reciter and associate professor at King Abdulaziz University in Jeddah. Former Secretary-General of the World Book and Sunnah Organization, known for his melodious voice and scholarly contributions."
+                        },
+                        "imageUrl": "https://quranhub.b-cdn.net/quran/images/reciters/abdullah-basfar.jpeg"
+                    }
+                }
+            }
+        }
+    },
+    404: {
+        "description": "Not Found - Edition identifier does not exist or is not an audio edition",
+        "content": {
+            "application/json": {
+                "examples": {
+                    "not_found": {
+                        "summary": "Edition not found",
+                        "value": {
+                            "code": 404,
+                            "status": "Not Found",
+                            "data": "Edition not found"
+                        }
+                    },
+                    "not_audio": {
+                        "summary": "Edition is not audio",
+                        "value": {
+                            "code": 404,
+                            "status": "Not Found",
+                            "data": "Edition is not audio"
+                        }
+                    }
                 }
             }
         }

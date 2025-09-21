@@ -9,8 +9,10 @@ getTheSurahbyEditionResponse,
 getTheSurahResponse,
 getAllSurahResponse
 )
-from utils.logger import logger 
+
+from utils.logger import logger
 from utils.config import DEFAULT_EDITION_IDENTIFIER
+from utils.helpers import add_cache_headers
 
 surah_router = APIRouter()
 
@@ -33,27 +35,28 @@ async def get_all_surah(
 ):
     try:
         data = await surah_repo.get_all_surahs(revelationOrder)
-        
         if isinstance(data, str):
             logger.error("Something went wrong: %s", str(data))
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag="surahs-list")
         return response
-
     except Exception as e:
         logger.exception("An exception occurred while fetching surahs: %s", str(e))
-        return JSONResponse(
+        error_response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        error_response.headers["Cache-Control"] = "no-store"
+        return error_response
 
 
 @surah_router.get(
@@ -69,27 +72,28 @@ async def get_all_surah(
 async def get_surahs_by_revelation_city():
     try:
         data = await surah_repo.get_all_revelation_cities_with_surahs()
-        
         if isinstance(data, str):
             logger.error("Something went wrong: %s", str(data))
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag="surahs-by-revelation-city")
         return response
-
     except Exception as e:
         logger.exception("An exception occurred while fetching surahs by revelation city: %s", str(e))
-        return JSONResponse(
+        error_response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        error_response.headers["Cache-Control"] = "no-store"
+        return error_response
 
 
 @surah_router.get(
@@ -105,27 +109,28 @@ async def get_surahs_by_revelation_city():
 async def get_surahs_by_juz():
     try:
         data = await surah_repo.get_all_juzs_with_surahs()
-        
         if isinstance(data, str):
             logger.error("Something went wrong: %s", str(data))
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag="surahs-by-juz")
         return response
-
     except Exception as e:
         logger.exception("An exception occurred while fetching surahs by Juz: %s", str(e))
-        return JSONResponse(
+        error_response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        error_response.headers["Cache-Control"] = "no-store"
+        return error_response
 
 
 @surah_router.get(
@@ -146,33 +151,34 @@ async def get_the_surah(
 ):
     try:
         if surahNumber < 1 or surahNumber > 114:
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Surah number must be between 1 and 114."},
                 status_code=400
             )
-
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         data = await surah_repo.get_surah(surahNumber, DEFAULT_EDITION_IDENTIFIER, limit, offset)
-        
         if isinstance(data, str):
-            
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag=f"surah-{surahNumber},edition-{DEFAULT_EDITION_IDENTIFIER}")
         return response
-
     except Exception as e:
         logger.exception("An exception occurred while fetching surah number %d: %s", surahNumber, str(e))
-        return JSONResponse(
+        error_response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        error_response.headers["Cache-Control"] = "no-store"
+        return error_response
 
 
 @surah_router.get(
@@ -194,33 +200,34 @@ async def get_the_surah_by_edition(
 ):
     try:
         if surahNumber < 1 or surahNumber > 114:
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Surah number must be between 1 and 114."},
                 status_code=400
             )
-
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         data = await surah_repo.get_surah(surahNumber, editionIdentifier, limit, offset)
-        
         if isinstance(data, str):
-            
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag=f"surah-{surahNumber},edition-{editionIdentifier}")
         return response
-
     except Exception as e:
         logger.exception("An exception occurred while fetching surah number %d and edition %s: %s", surahNumber, editionIdentifier, str(e))
-        return JSONResponse(
+        error_response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        error_response.headers["Cache-Control"] = "no-store"
+        return error_response
 
 
 @surah_router.get(
@@ -242,31 +249,32 @@ async def get_the_surah_by_editions(
 ):
     try:
         if surahNumber < 1 or surahNumber > 114:
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Surah number must be between 1 and 114."},
                 status_code=400
             )
-
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         edition_list = editionIdentifiers.split(',')
         data = await surah_repo.get_surah_by_multiple_editions(surahNumber, edition_list, limit, offset)
-
         if isinstance(data, str):
-            
-            return JSONResponse(
+            error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-
+            error_response.headers["Cache-Control"] = "no-store"
+            return error_response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag=f"surah-{surahNumber},editions-{editionIdentifiers}")
         return response
-
     except Exception as e:
         logger.exception("An exception occurred while fetching surah number %d and editions %s: %s", surahNumber, editionIdentifiers, str(e))
-        return JSONResponse(
+        error_response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        error_response.headers["Cache-Control"] = "no-store"
+        return error_response

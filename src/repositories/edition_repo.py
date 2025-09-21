@@ -1,3 +1,5 @@
+
+# Canonical: Get tafsir edition by identifier (matches get_distinct_audio_edition_by_identifier pattern)
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from db.session import AsyncSessionLocal
@@ -96,6 +98,43 @@ async def get_editions_narrator_identifiers():
         logger.error("An exception occurred: %s", str(e))
         return "An error occurred while fetching narrator identifiers."
 
+# Canonical: Return the same object shape as get_distinct_audio_editions_by_englishname, but for a single edition
+async def get_distinct_audio_edition_by_identifier(edition_identifier: str):
+    """
+    Returns a single distinct audio edition object (same shape as get_distinct_audio_editions_by_englishname) for the given edition identifier.
+    Returns:
+        dict: edition object if found and is audio
+        str: "not_found" if edition does not exist
+        str: "not_audio" if edition exists but is not audio
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            # First, get the edition by identifier (any format)
+            result = await session.execute(
+                select(Edition)
+                .options(selectinload(Edition.reciter))
+                .filter(Edition.identifier == edition_identifier)
+            )
+            edition = result.scalars().first()
+        if not edition:
+            return "not_found"
+        if edition.format != "audio":
+            return "not_audio"
+        reciter = edition.reciter
+        # Match the shape of get_distinct_audio_editions_by_englishname (no identifier, type, narratorIdentifier)
+        return {
+            "language": edition.language,
+            "name": edition.name,
+            "englishName": getattr(edition, 'englishname', None),
+            "imageUrl": reciter.image_url if reciter else None,
+            "shortDescription": reciter.short_description if reciter else None,
+            "format": edition.format,
+            "direction": edition.direction,
+            "narratorIdentifier": edition.narrator_identifier,
+        }
+    except Exception as e:
+        logger.error(f"An exception occurred in get_distinct_audio_edition_by_identifier: {str(e)}")
+        return "not_found"
 
 def _format_audio_edition(item):
     """Format a single audio edition item."""
@@ -506,3 +545,41 @@ async def get_edition_analysis():
         logger.error(f"Error in editions analysis: {str(e)}", exc_info=True)
         return {"error": "An error occurred while performing editions analysis."}
 
+async def get_tafsir_edition_by_identifier(edition_identifier: str):
+    """
+    Returns a single tafsir edition object (same shape as canonical tafsir edition response) for the given edition identifier.
+    Returns:
+        dict: edition object if found and is tafsir
+        str: "not_found" if edition does not exist
+        str: "not_tafsir" if edition exists but is not tafsir
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            # Eager load tafsir relationship
+            result = await session.execute(
+                select(Edition)
+                .options(selectinload(Edition.tafsir))
+                .filter(Edition.identifier == edition_identifier)
+            )
+            edition = result.scalars().first()
+        if not edition:
+            return "not_found"
+        if edition.type != "tafsir":
+            return "not_tafsir"
+        tafsir = edition.tafsir
+        # Canonical tafsir edition metadata (matches canonical tafsir response shape)
+        data = {
+            "identifier": edition.identifier,
+            "language": edition.language,
+            "name": edition.name,
+            "englishName": getattr(edition, 'englishname', None),
+            "format": edition.format,
+            "type": edition.type,
+            "direction": edition.direction,
+            "narratorIdentifier": edition.narrator_identifier,
+            "imageUrl": tafsir.image_url if tafsir and getattr(tafsir, "image_url", None) else None,
+        }
+        return data
+    except Exception as e:
+        logger.error(f"An exception occurred in get_tafsir_edition_by_identifier: {str(e)}")
+        return "not_found"

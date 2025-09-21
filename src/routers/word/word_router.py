@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 from sqlalchemy import select
 from db.session import AsyncSessionLocal
 from db.models import Word
@@ -11,6 +12,8 @@ from .word_docs import (
 )
 from utils.logger import logger
 
+
+LOCATION_DESC = "Location in the format surah:ayah:position"
 word_router = APIRouter()
 
 @word_router.get(
@@ -29,7 +32,7 @@ word_router = APIRouter()
     }
 )
 async def get_word_tajweed(
-    location: str = Query(..., description="Location in the format surah:ayah:position", example="1:1:2")
+    location: str = Query(..., description=LOCATION_DESC, example="1:1:2")
 ):
     try:
         surah, ayah, position = map(int, location.split(":"))
@@ -43,7 +46,7 @@ async def get_word_tajweed(
             )
             tajweed = result.scalar_one_or_none()
             if tajweed is not None:
-                return JSONResponse(
+                response = JSONResponse(
                     content={
                         "code": 200,
                         "status": "OK",
@@ -54,17 +57,23 @@ async def get_word_tajweed(
                     },
                     status_code=200
                 )
+                add_cache_headers(response, cache_tag=f"word:tajweed:{location}")
+                return response
             else:
-                return JSONResponse(
+                response = JSONResponse(
                     content={"code": 404, "status": "Error", "data": f"Word not found for location {location}"},
                     status_code=404
                 )
+                response.headers["Cache-Control"] = "no-store"
+                return response
     except Exception as e:
         logger.error(f"Error in get_word_tajweed: {e}", exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 500, "status": "Error", "data": str(e)},
             status_code=500
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 @word_router.get(
     "/line-number",
@@ -82,7 +91,7 @@ async def get_word_tajweed(
     }
 )
 async def get_word_line_number(
-    location: str = Query(..., description="Location in the format surah:ayah:position", example="1:1:2")
+    location: str = Query(..., description=LOCATION_DESC, example="1:1:2")
 ):
     try:
         surah, ayah, position = map(int, location.split(":"))
@@ -96,7 +105,7 @@ async def get_word_line_number(
             )
             line_number = result.scalar_one_or_none()
             if line_number is not None:
-                return JSONResponse(
+                response = JSONResponse(
                     content={
                         "code": 200,
                         "status": "OK",
@@ -107,17 +116,23 @@ async def get_word_line_number(
                     },
                     status_code=200
                 )
+                add_cache_headers(response, cache_tag=f"word:line_number:{location}")
+                return response
             else:
-                return JSONResponse(
+                response = JSONResponse(
                     content={"code": 404, "status": "Error", "data": f"Word not found for location {location}"},
                     status_code=404
                 )
+                response.headers["Cache-Control"] = "no-store"
+                return response
     except Exception as e:
         logger.error(f"Error in get_word_line_number: {e}", exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 500, "status": "Error", "data": str(e)},
             status_code=500
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 @word_router.get(
     "/image",
@@ -139,7 +154,7 @@ async def get_word_line_number(
     }
 )
 async def get_word_image(
-    location: str = Query(..., description="Location in the format surah:ayah:position", example="1:1:2"),
+    location: str = Query(..., description=LOCATION_DESC, example="1:1:2"),
     type: str = Query(
         "v4",
         description = (
@@ -171,11 +186,13 @@ async def get_word_image(
                 elif type == "qa":
                     img_url = row[2]
                 else:
-                    return JSONResponse(
+                    response = JSONResponse(
                         content={"code": 400, "status": "Error", "data": f"Invalid image type: {type}"},
                         status_code=400
                     )
-                return JSONResponse(
+                    response.headers["Cache-Control"] = "no-store"
+                    return response
+                response = JSONResponse(
                     content={
                         "code": 200,
                         "status": "OK",
@@ -187,14 +204,20 @@ async def get_word_image(
                     },
                     status_code=200
                 )
+                add_cache_headers(response, cache_tag=f"word:image:{location}:{type}")
+                return response
             else:
-                return JSONResponse(
+                response = JSONResponse(
                     content={"code": 404, "status": "Error", "data": f"Word not found for location {location}"},
                     status_code=404
                 )
+                response.headers["Cache-Control"] = "no-store"
+                return response
     except Exception as e:
         logger.error(f"Error in get_word_image: {e}", exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 500, "status": "Error", "data": str(e)},
             status_code=500
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response

@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 from repositories.mushaf_layout_repo import get_layouts, get_layout_by_code, get_layout_font, get_lines_for_page, get_lines_for_surah, lookup_lines
 from routers.mushaf_layout.mushaf_layout_docs import getMushafLayoutsResponse, getMushafLayoutDetailResponse, getMushafLayoutPageLinesResponse, getMushafLayoutSurahLinesResponse, getMushafLayoutLookupResponse
 
@@ -36,14 +37,19 @@ async def list_layouts(
             "linesPerPage": l.lines_per_page,
             "font": {"code": font.code, "name": font.name, "category": font.category} if font else None
         })
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": {
-            "total": result["total"],
-            "items": items
-        }
-    }
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": {
+                "total": result["total"],
+                "items": items
+            }
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag="mushaf_layout:list")
+    return response
 
 @mushaf_layout_router.get(
     "/{layoutCode}",
@@ -61,19 +67,26 @@ async def layout_detail(
 ):
     layout = await get_layout_by_code(layoutCode)
     if not layout:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     font = await get_layout_font(layout.font_id) if layout.font_id else None
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": {
-            "code": layout.code,
-            "name": layout.name,
-            "numberOfPages": layout.number_of_pages,
-            "linesPerPage": layout.lines_per_page,
-            "font": {"code": font.code, "name": font.name, "category": font.category} if font else None
-        }
-    }
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": {
+                "code": layout.code,
+                "name": layout.name,
+                "numberOfPages": layout.number_of_pages,
+                "linesPerPage": layout.lines_per_page,
+                "font": {"code": font.code, "name": font.name, "category": font.category} if font else None
+            }
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"mushaf_layout:detail:{layoutCode}")
+    return response
 
 @mushaf_layout_router.get(
     "/{layoutCode}/pages/{pageNumber}",
@@ -92,17 +105,26 @@ async def layout_page_lines(
 ):
     layout = await get_layout_by_code(layoutCode)
     if not layout:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     lines = await get_lines_for_page(layout.layout_id, pageNumber)
     if not lines:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout or page not found."})
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": [
-            {"lineNumber": l.line_number, "lineType": l.line_type, "isCentered": l.is_centered, "surahNumber": l.surah_number} for l in lines
-        ]
-    }
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout or page not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": [
+                {"lineNumber": l.line_number, "lineType": l.line_type, "isCentered": l.is_centered, "surahNumber": l.surah_number} for l in lines
+            ]
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"mushaf_layout:page:{layoutCode}:{pageNumber}")
+    return response
 
 @mushaf_layout_router.get(
     "/{layoutCode}/surah/{surahNumber}",
@@ -121,24 +143,33 @@ async def layout_surah_lines(
 ):
     layout = await get_layout_by_code(layoutCode)
     if not layout:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     lines = await get_lines_for_surah(layout.layout_id, surahNumber)
     if not lines:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout or surah not found."})
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": [
-            {
-                "pageNumber": l.page_number,
-                "lineNumber": l.line_number,
-                "lineType": l.line_type,
-                "isCentered": l.is_centered,
-                "fromWord": l.ext_first_word_id,
-                "toWord": l.ext_last_word_id
-            } for l in lines
-        ]
-    }
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout or surah not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": [
+                {
+                    "pageNumber": l.page_number,
+                    "lineNumber": l.line_number,
+                    "lineType": l.line_type,
+                    "isCentered": l.is_centered,
+                    "fromWord": l.ext_first_word_id,
+                    "toWord": l.ext_last_word_id
+                } for l in lines
+            ]
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"mushaf_layout:surah:{layoutCode}:{surahNumber}")
+    return response
 
 @mushaf_layout_router.get(
     "/{layoutCode}/word/{fromWord}/{toWord}",
@@ -157,24 +188,35 @@ async def layout_lookup(
     toWord: int = Path(..., alias="toWord", description="End word id (inclusive)")
 ):
     if toWord - fromWord > 20:
-        return JSONResponse(status_code=400, content={"code": 400, "status": "Bad Request", "data": "The difference between toWord and fromWord must not be greater than 20."})
+        response = JSONResponse(status_code=400, content={"code": 400, "status": "Bad Request", "data": "The difference between toWord and fromWord must not be greater than 20."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     layout = await get_layout_by_code(layoutCode)
     if not layout:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Layout not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     lines = await lookup_lines(layout.layout_id, fromWord, toWord)
     if not lines:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "No lines found for lookup."})
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": [
-            {
-                "pageNumber": l.page_number,
-                "lineNumber": l.line_number,
-                "lineType": l.line_type,
-                "isCentered": l.is_centered,
-                "fromWord": l.ext_first_word_id,
-                "toWord": l.ext_last_word_id
-            } for l in lines
-        ]
-    }
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "No lines found for lookup."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": [
+                {
+                    "pageNumber": l.page_number,
+                    "lineNumber": l.line_number,
+                    "lineType": l.line_type,
+                    "isCentered": l.is_centered,
+                    "fromWord": l.ext_first_word_id,
+                    "toWord": l.ext_last_word_id
+                } for l in lines
+            ]
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"mushaf_layout:lookup:{layoutCode}:{fromWord}:{toWord}")
+    return response

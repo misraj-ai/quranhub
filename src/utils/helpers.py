@@ -1,7 +1,36 @@
 from utils.config import BUNNY_URL
 from typing import List, Tuple
 from utils.logger import logger
+from fastapi.responses import JSONResponse
+from typing import Optional
 
+def add_cache_headers(response: JSONResponse, cache_duration: int = 2592000, browser_cache: int = 3600, cache_tag: Optional[str] = None):
+    """
+    Add Cloudflare-optimized cache headers to response
+    
+    Args:
+        response: The JSONResponse object
+        cache_duration: Edge cache TTL in seconds (default: 30 days)
+        browser_cache: Browser cache TTL in seconds (default: 7 days)
+        cache_tag: Optional Cloudflare cache tag for targeted purging
+    """
+    # Main cache control header - tells Cloudflare to cache this
+    response.headers["Cache-Control"] = f"public, max-age={cache_duration}, s-maxage={cache_duration}, stale-while-revalidate=86400"
+    
+    # CDN-Cache-Control for Cloudflare specifically (overrides Cache-Control for CF only)
+    response.headers["CDN-Cache-Control"] = f"max-age={cache_duration}"
+    
+    # Cloudflare Browser Cache TTL
+    response.headers["Cloudflare-CDN-Cache-Control"] = f"max-age={cache_duration}, browser-max-age={browser_cache}"
+    
+    # Add cache tag for targeted purging if provided
+    if cache_tag:
+        response.headers["Cache-Tag"] = cache_tag
+    
+    # Vary header for proper caching with different formats
+    response.headers["Vary"] = "Accept-Encoding"
+    
+    return response
 
 def get_ayah_audio_url(bitrate, edition_identifier, ayah_number):
     return f"{BUNNY_URL}/audio/versebyverse/{bitrate}/{edition_identifier}/{ayah_number}.mp3"

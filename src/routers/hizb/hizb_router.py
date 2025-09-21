@@ -1,5 +1,7 @@
+
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 
 from repositories import hizb_repo  # Using the repository now
 from .hizb_docs import (
@@ -33,23 +35,28 @@ async def get_all_hizbs_metadata():
         data = await hizb_repo.get_all_hizbs()
 
         if isinstance(data, str):
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
+        add_cache_headers(response, cache_tag="hizb:all:metadata")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching all hizbs metadata: %s", str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 @hizb_router.get(
     "/metadata/{editionIdentifier}",
@@ -73,23 +80,28 @@ async def get_all_hizbs_metadata_by_edition(
         data = await hizb_repo.get_all_hizbs(editionIdentifier)
 
         if isinstance(data, str):
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
+        add_cache_headers(response, cache_tag=f"hizb:all:metadata:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching all hizbs metadata for edition %s: %s", editionIdentifier, str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 # ...existing routes...
 
@@ -117,36 +129,41 @@ async def get_hizb_by_number(
     try:
         # Validate hizbNumber range
         if hizbNumber < 1 or hizbNumber > 60:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Hizb number should be between 1 and 60"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Fetch hizb data
         data = await hizb_repo.get_hizb(hizbNumber, DEFAULT_EDITION_IDENTIFIER, limit, offset)
 
         # Check if data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"hizb:{hizbNumber}")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e), exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
     
 
   # Cache for 1 day
@@ -174,33 +191,38 @@ async def get_hizb_by_edition(
     try:
         # Validate hizbNumber range
         if hizbNumber < 1 or hizbNumber > 60:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Hizb number should be between 1 and 60"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Fetch hizb data for a specific edition
         data = await hizb_repo.get_hizb(hizbNumber, editionIdentifier, limit, offset)
 
         # Check if data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"hizb:{hizbNumber}:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e), exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response

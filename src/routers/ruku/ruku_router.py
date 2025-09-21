@@ -1,5 +1,7 @@
+
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 
 from repositories import ruku_repo  # Using the repository now
 from .ruku_docs import (
@@ -31,10 +33,12 @@ async def get_ruku_by_number(
     try:
         # Validate rukuNumber range
         if rukuNumber < 1 or rukuNumber > 556:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Ruku number should be between 1 and 556"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Fetch ruku data
         data = await ruku_repo.get_ruku(rukuNumber, DEFAULT_EDITION_IDENTIFIER, limit, offset)
@@ -42,25 +46,29 @@ async def get_ruku_by_number(
         # Check if data is an error message (string)
         if isinstance(data, str):
             logger.error("Something went wrong: %s", data)
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"ruku:{rukuNumber}")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
   # Cache for 1 day
 @ruku_router.get(
@@ -83,10 +91,12 @@ async def get_ruku_by_edition(
     try:
         # Validate rukuNumber range
         if rukuNumber < 1 or rukuNumber > 556:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Ruku number should be between 1 and 556"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Fetch ruku data
         data = await ruku_repo.get_ruku(rukuNumber, editionIdentifier, limit, offset)
@@ -94,22 +104,26 @@ async def get_ruku_by_edition(
         # Check if data is an error message (string)
         if isinstance(data, str):
             logger.error("Something went wrong: %s", data)
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"ruku:{rukuNumber}:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response

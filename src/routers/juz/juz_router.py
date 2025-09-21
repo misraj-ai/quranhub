@@ -1,5 +1,7 @@
+
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 
 from repositories import juz_repo  # Using the repository now
 from .juz_docs import (
@@ -30,23 +32,28 @@ async def get_all_juzs_metadata():
         data = await juz_repo.get_all_juzs()
 
         if isinstance(data, str):
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
+        add_cache_headers(response, cache_tag="juz:all:metadata")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching all juzs metadata: %s", str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 @juz_router.get(
     "/metadata/{editionIdentifier}",
@@ -66,23 +73,28 @@ async def get_all_juzs_metadata_by_edition(
         data = await juz_repo.get_all_juzs(editionIdentifier)
 
         if isinstance(data, str):
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
+        add_cache_headers(response, cache_tag=f"juz:all:metadata:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching all juzs metadata for edition %s: %s", editionIdentifier, str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 @juz_router.get(
     "/{juzNumber}",
@@ -102,33 +114,38 @@ async def get_the_juz(
 ):
     try:
         if juzNumber < 1 or juzNumber > 30:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Juz number must be between 1 and 30."},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         data = await juz_repo.get_juz(juzNumber, DEFAULT_EDITION_IDENTIFIER, limit, offset)
 
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"juz:{juzNumber}")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching juz number %d: %s", juzNumber, str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 
 @juz_router.get(
@@ -150,31 +167,36 @@ async def get_the_juz_by_edition(
 ):
     try:
         if juzNumber < 1 or juzNumber > 30:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Juz number must be between 1 and 30."},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         data = await juz_repo.get_juz(juzNumber, editionIdentifier, limit, offset)
 
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"juz:{juzNumber}:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching juz number %d for edition %s: %s", juzNumber, editionIdentifier, str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 

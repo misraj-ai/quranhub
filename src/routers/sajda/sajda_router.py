@@ -1,5 +1,7 @@
+
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 
 from repositories import sajda_repo  # Using the repository now
 from .sajda_docs import (
@@ -31,26 +33,29 @@ async def get_all_sajda():
 
         # Check if data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag="sajda:all")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e), exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
     
   # Cache for 1 day
 @sajda_router.get(
@@ -73,23 +78,26 @@ async def get_sajda_by_edition(
 
         # Check if data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"sajda:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e), exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response

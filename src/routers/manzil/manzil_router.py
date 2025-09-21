@@ -1,5 +1,7 @@
+
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 
 from repositories import manzil_repo  # Using the repository now
 from .manzil_docs import (
@@ -30,36 +32,41 @@ async def get_manzil_by_number(
     try:
         # Validation (although Path already does ge/le, but you want extra safety log)
         if manzilNumber < 1 or manzilNumber > 7:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Manzil number should be between 1 and 7"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Fetch manzil data
         data = await manzil_repo.get_manzil(manzilNumber, DEFAULT_EDITION_IDENTIFIER, limit, offset)
 
         # Check if data retrieval failed
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Success response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"manzil:{manzilNumber}")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e), exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
     
   # Cache for 1 day
 @manzil_router.get(
@@ -82,33 +89,38 @@ async def get_manzil_by_edition(
     try:
         # Manual Validation
         if manzilNumber < 1 or manzilNumber > 7:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Manzil number should be between 1 and 7"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Fetch Manzil by Edition
         data = await manzil_repo.get_manzil(manzilNumber, editionIdentifier, limit, offset)
 
         # Check for error
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Success Response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"manzil:{manzilNumber}:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e), exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response

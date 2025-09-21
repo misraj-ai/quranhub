@@ -7,7 +7,8 @@ getTheQuranbyEditionResponse,
 getTheQuranResponse
 
 )
-from utils.logger import logger 
+from utils.logger import logger
+from utils.helpers import add_cache_headers
 from utils.config import DEFAULT_EDITION_IDENTIFIER
 
 quran_router = APIRouter()
@@ -33,17 +34,18 @@ async def get_the_quran():
         data = await quran_repo.get_quran(DEFAULT_EDITION_IDENTIFIER)
 
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag="quran:all:default")
         return response
 
     except Exception as e:
@@ -74,17 +76,18 @@ async def get_the_quran_by_edition(editionIdentifier: str = Path(..., descriptio
         data = await quran_repo.get_quran(editionIdentifier)
 
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"quran:all:edition:{editionIdentifier}")
         return response
 
     except Exception as e:

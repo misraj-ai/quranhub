@@ -23,59 +23,12 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.utils import get_openapi
 import logging
-import cachetools
-import json
-from starlette.middleware.base import BaseHTTPMiddleware
-import re
-# Routers (all imports at top)
 from routers.mutashabihat.mutashabihat_router import mutashabihat_router
 from routers.similar_ayah.similar_ayah_router import similar_ayah_router
 from routers.ayah_theme.ayah_theme_router import ayah_theme_router
 from routers.font.font_router import font_router
 from routers.mushaf_layout.mushaf_layout_router import mushaf_layout_router
 
-# Global cache
-cache = cachetools.TTLCache(maxsize=100, ttl=86400)
-
-class CacheMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        cache_key = str(request.url)
-
-        # Define a regular expression pattern to match paths that contain any of the words
-        skip_patterns = re.compile(r"(docs|openapi\.json|random|health|liveness|startup)", re.IGNORECASE)
-
-        # If the path matches the regular expression, skip caching
-        if skip_patterns.search(request.url.path):
-            return await call_next(request)
-
-        # Check cache
-        cached_response = cache.get(cache_key)
-        if cached_response:
-            return JSONResponse(content=json.loads(cached_response), status_code=200)
-
-        # Process request
-        response = await call_next(request)
-
-        try:
-            response_body = b""
-            async for chunk in response.body_iterator:
-                response_body += chunk
-
-            cache[cache_key] = response_body
-
-            response_data = json.loads(response_body.decode('utf-8'))
-            return JSONResponse(content=response_data, status_code=response.status_code)
-
-        except Exception as e:
-            # Log unexpected exceptions
-            logger.debug(f"Exception in CacheMiddleware: {e}")
-            # Return the original response if anything fails
-            return response
-
-
-
-
-#-----
 
 tags_metadata = [
     {"name": "Edition", "description": "Available text and audio editions - All these endpoints give you a JSON object describing an edition. From this object, you need to use the identifier to get data from other endpoints in this API. For any of the endpoints that require an edition identifier, if you do not specify one, 'quran-simple' is used and returns the Arabic text of the Holy Quran."},
@@ -99,25 +52,13 @@ tags_metadata = [
     {"name": "Font", "description": "Font metadata, font files, and per-page font resources for Quranic scripts."},
     {"name": "Mushaf Layout", "description": "Mushaf layout metadata, page/line structure, and surah/word lookups for Quranic pages."},
 ]
-async def lifespan(app: FastAPI):
-    # Startup event: clear cache
-    try:
-        cache.clear()  # Clear in-memory cache
-        logger.info("Cache cleared on application startup.")
-    except Exception as e:
-        logger.error(f"Error clearing cache: {str(e)}")
-    
-    # Yield control back to FastAPI
-    yield
-
+# Remove lifespan function and argument
 app = FastAPI(
     title="Quran Hub API",
     description="Quran Hub API Documentation",
-    openapi_tags=tags_metadata,
-    lifespan=lifespan
+    openapi_tags=tags_metadata
 )
-# Add the CacheMiddleware to the app
-app.add_middleware(CacheMiddleware)  
+# (Removed CacheMiddleware registration)
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     errors = exc.errors()

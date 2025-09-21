@@ -1,5 +1,14 @@
+
+
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
+
+# Constants for repeated strings
+ERROR_SOMETHING_WRONG = "Something went wrong"
+ERROR_INVALID_REFERENCE = "Invalid reference format."
+CACHE_NO_STORE = "no-store"
+CACHE_NO_CACHE = "no-cache, no-store, must-revalidate"
 
 import random
 from repositories import ayah_repo  # Using the repository now
@@ -39,24 +48,29 @@ async def get_random_ayah():
 
         if isinstance(data, str):
             logger.error("Error fetching random ayah: %s", data)
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        # Random endpoint: no cache
+        response.headers["Cache-Control"] = CACHE_NO_CACHE
         return response
 
     except Exception:
         logger.exception("Unexpected error fetching random ayah")
-        return JSONResponse(
-            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+        response = JSONResponse(
+            content={"code": 400, "status": "Error", "data": ERROR_SOMETHING_WRONG},
             status_code=400
         )
+        response.headers["Cache-Control"] = CACHE_NO_STORE
+        return response
     
 
 @ayah_router.get(
@@ -82,25 +96,29 @@ async def get_random_ayah_by_edition(
         data = await ayah_repo.get_an_ayah(random_number, editionIdentifier)
 
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        # Random endpoint: no cache
+        response.headers["Cache-Control"] = CACHE_NO_CACHE
         return response
 
     except Exception:
         logger.exception("Unexpected error fetching random ayah by edition")
-        return JSONResponse(
-            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+        response = JSONResponse(
+            content={"code": 400, "status": "Error", "data": ERROR_SOMETHING_WRONG},
             status_code=400
         )
+        response.headers["Cache-Control"] = CACHE_NO_STORE
+        return response
     
 
 @ayah_router.get(
@@ -123,35 +141,42 @@ async def get_random_ayah_by_editions(
 ):
     try:
         random_number = random.randint(1, 6236)
-        edition_identifiers_list = editionIdentifiers.split(',')
+        editionIdentifiers_list = editionIdentifiers.split(',')
 
-        if not edition_identifiers_list:
-            return JSONResponse(
+        if not editionIdentifiers_list:
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "At least one valid edition identifier must be provided."},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
-        data = await ayah_repo.get_an_ayah_by_multiple_editions(random_number, edition_identifiers_list)
+        data = await ayah_repo.get_an_ayah_by_multiple_editions(random_number, editionIdentifiers_list)
 
         if isinstance(data, str):
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        # Random endpoint: no cache
+        response.headers["Cache-Control"] = CACHE_NO_CACHE
         return response
 
     except Exception:
         logger.exception("Unexpected error fetching random ayah for multiple editions")
-        return JSONResponse(
-            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+        response = JSONResponse(
+            content={"code": 400, "status": "Error", "data": ERROR_SOMETHING_WRONG},
             status_code=400
         )
+        response.headers["Cache-Control"] = CACHE_NO_STORE
+        return response
     
 
 @ayah_router.get(
@@ -183,31 +208,37 @@ async def get_the_ayah(
         elif reference.isdigit():
             data = await ayah_repo.get_an_ayah(int(reference), DEFAULT_EDITION_IDENTIFIER)
         else:
-            return JSONResponse(
-                content={"code": 400, "status": "Error", "data": "Invalid reference format."},
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": ERROR_INVALID_REFERENCE},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        # Static ayah: cache for 30 days, tag by ayah
+        add_cache_headers(response, cache_tag=f"ayah:{reference}")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching ayah. Reference: %s", e)
-        return JSONResponse(
-            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+        response = JSONResponse(
+            content={"code": 400, "status": "Error", "data": ERROR_SOMETHING_WRONG},
             status_code=400
         )
+        response.headers["Cache-Control"] = CACHE_NO_STORE
+        return response
     
 
 @ayah_router.get(
@@ -240,31 +271,37 @@ async def get_the_ayah_by_edition(
         elif reference.isdigit():
             data = await ayah_repo.get_an_ayah(int(reference), editionIdentifier)
         else:
-            return JSONResponse(
-                content={"code": 400, "status": "Error", "data": "Invalid reference format."},
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": ERROR_INVALID_REFERENCE},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        # Static ayah: cache for 30 days, tag by ayah+edition
+        add_cache_headers(response, cache_tag=f"ayah:{reference}:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching ayah by edition. Reference: %s", e)
-        return JSONResponse(
-            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+        response = JSONResponse(
+            content={"code": 400, "status": "Error", "data": ERROR_SOMETHING_WRONG},
             status_code=400
         )
+        response.headers["Cache-Control"] = CACHE_NO_STORE
+        return response
 
 
 @ayah_router.get(
@@ -287,40 +324,46 @@ async def get_the_ayah_by_editions(
     editionIdentifiers: str = Path(..., description="Valid edition identifiers", example="quran-uthmani,quran-simple-clean")
 ):
     try:
-        edition_identifiers_list = editionIdentifiers.split(',')
-        
+        editionIdentifiers_list = editionIdentifiers.split(',')
+
         if ":" in reference:
             ayah_number_list = reference.split(":")
             data = await ayah_repo.get_an_ayah_by_surah_number_and_multiple_editions(
                 int(ayah_number_list[0]),
                 int(ayah_number_list[1]),
-                edition_identifiers_list
+                editionIdentifiers_list
             )
         elif reference.isdigit():
-            data = await ayah_repo.get_an_ayah_by_multiple_editions(int(reference), edition_identifiers_list)
+            data = await ayah_repo.get_an_ayah_by_multiple_editions(int(reference), editionIdentifiers_list)
         else:
-            return JSONResponse(
-                content={"code": 400, "status": "Error", "data": "Invalid reference format."},
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": ERROR_INVALID_REFERENCE},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = CACHE_NO_STORE
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        # Static ayah: cache for 30 days, tag by ayah+editions
+        add_cache_headers(response, cache_tag=f"ayah:{reference}:editions:{editionIdentifiers}")
         return response
 
     except Exception as e:
         logger.exception("An exception occurred while fetching ayah by editions. Reference: %s", e)
-        return JSONResponse(
-            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+        response = JSONResponse(
+            content={"code": 400, "status": "Error", "data": ERROR_SOMETHING_WRONG},
             status_code=400
         )
+        response.headers["Cache-Control"] = CACHE_NO_STORE
+        return response

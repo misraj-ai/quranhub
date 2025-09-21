@@ -13,9 +13,13 @@ from .edition_docs import (
     getTheEditionByFormatResponse,
     getTheEditionByFormatAndTypeResponse,
     getTheAudioEditionByNarratorIdentifierResponse,
-    getEditionsAnalysisResponse
+    getEditionsAnalysisResponse,
+    # Add canonical docs for tafsir edition by identifier
 )
-from utils.logger import logger 
+
+
+from utils.logger import logger
+from utils.helpers import add_cache_headers
 
 edition_router = APIRouter()
 
@@ -42,19 +46,18 @@ async def get_the_edition(
 ):
     try:
         data = await edition_repo.get_edition(language=language, type=type, format=format)
-        
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
                 status_code=400
             )
-        
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag="edition:all")
         return response
         
     except Exception as e:
@@ -85,15 +88,17 @@ async def get_the_edition_languages():
         data = await edition_repo.get_editions_languages()
         if isinstance(data, str):
             logger.error("Something wrong happened: %s", data)
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something wrong happened: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag="edition:languages")
         return response
     except Exception as e:
         logger.error("An exception occurred: %s", str(e))
@@ -122,23 +127,19 @@ async def get_the_edition_by_language(
     language: str = Path(..., min_length=2, max_length=2, description="A 2 digit language code", example="fr")
 ):
     try:
-        # Fetch editions based on the provided language
         data = await edition_repo.get_edition(language=language)
-        
-        # If the data is a string (likely an error message), log and return it
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"edition:language:{language}")
         return response
     except Exception as e:
         # Log unexpected exceptions and return a generic error response
@@ -166,23 +167,19 @@ async def get_the_edition_by_language(
 )
 async def get_the_edition_types():
     try:
-        # Fetch the distinct edition types
         data = await edition_repo.get_editions_types()
-        
-        # If the data is a string (likely an error message), log and return it
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag="edition:types")
         return response
     except Exception as e:
         # Log unexpected exceptions and return a generic error response
@@ -210,23 +207,19 @@ async def get_the_edition_types():
 )
 async def get_the_edition_by_type(type: str = Path(..., description="A valid type for edition", example="quran")):
     try:
-        # Fetch the editions for the given type
         data = await edition_repo.get_edition(type=type)
-        
-        # If the data is a string (likely an error message), log and return it
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"edition:type:{type}")
         return response
     except Exception as e:
         # Log unexpected exceptions and return a generic error response
@@ -255,23 +248,19 @@ async def get_the_edition_by_type(type: str = Path(..., description="A valid typ
 )
 async def get_the_edition_formats():
     try:
-        # Fetch the editions' formats
         data = await edition_repo.get_editions_formats()
-        
-        # Handle if the data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag="edition:formats")
         return response
     except Exception as e:
         # Log unexpected exceptions and return a generic error response
@@ -299,23 +288,19 @@ async def get_the_edition_formats():
 )
 async def get_edition_by_format(format: str = Path(..., description="A valid format for edition", example="audio")):
     try:
-        # Fetch the editions by the provided format
         data = await edition_repo.get_edition(format=format)
-        
-        # Check if the data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"edition:format:{format}")
         return response
     except Exception as e:
         # Log unexpected exceptions and return a generic error response
@@ -346,23 +331,19 @@ async def get_edition_by_format_and_type(
     type: str = Path(..., description="A valid type for edition", example="narration")
 ):
     try:
-        # Fetch the editions by format and type
         data = await edition_repo.get_edition(format=format, type=type)
-        
-        # Check if the data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"edition:format:{format}:type:{type}")
         return response
     except Exception:
         # Log unexpected exceptions and return a generic error response
@@ -387,26 +368,95 @@ async def get_edition_by_format_and_type(
     }
 )
 async def get_distinct_audio_editions():
-    try:
-        data = await edition_repo.get_distinct_audio_editions_by_englishname()
-        if isinstance(data, str):
-            return JSONResponse(
-                content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
-                status_code=400
-            )
+    data = await edition_repo.get_distinct_audio_editions_by_englishname()
+    if isinstance(data, str):
         response = JSONResponse(
-            content={"code": 200, "status": "OK", "data": data},
-            status_code=200
-        )
-        return response
-    except Exception as e:
-        logger.error("An exception occurred: %s", str(e))
-        return JSONResponse(
-            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+            content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    response = JSONResponse(
+        content={"code": 200, "status": "OK", "data": data},
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag="edition:audio:distinct")
+    return response
+
+# Canonical: Call repo function to get distinct audio edition by identifier
+@edition_router.get(
+    "/audio/edition/{editionIdentifier}",
+    tags=["Edition"],
+    summary="Get distinct audio edition by edition identifier",
+    description="Given an audio edition identifier, returns the same object shape as the distinct audio editions endpoint, but for a single edition. Returns 404 if not found or not an audio edition.",
+    openapi_extra={
+        "x-agent-hints": "Call this endpoint to get a distinct audio edition object for a specific audio edition identifier.",
+        "x-mcp-example": {"editionIdentifier": "ar.abdulbasitmurattal.hafs"}
+    }
+)
+async def get_audio_edition_by_identifier(
+    editionIdentifier: str = Path(..., description="Audio edition identifier (e.g., ar.abdulbasitmurattal.hafs)")
+):
+    try:
+        data = await edition_repo.get_distinct_audio_edition_by_identifier(editionIdentifier)
+        if data == "not_found":
+            response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Edition not found."})
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        if data == "not_audio":
+            response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Edition is not audio."})
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        if not data:
+            response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Edition not found."})
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        response = JSONResponse(status_code=200, content={"code": 200, "status": "OK", "data": data})
+        add_cache_headers(response, cache_tag=f"edition:audio:{editionIdentifier}")
+        return response
+    except Exception as e:
+        logger.error(f"An exception occurred in get_audio_edition_by_identifier: {str(e)}")
+        response = JSONResponse(status_code=400, content={"code": 400, "status": "Error", "data": "Something went wrong"})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     
-  # Cache for 1 day
+# Canonical: Call repo function to get distinct audio edition by identifier
+@edition_router.get(
+    "/tafsir/{editionIdentifier}",
+    tags=["Edition"],
+    summary="Get tafsir edition by edition identifier",
+    description="Given a tafsir edition identifier, returns the canonical tafsir edition metadata object. Returns 404 if not found or not a tafsir edition.",
+    openapi_extra={
+        "x-agent-hints": "Call this endpoint to get a tafsir edition object for a specific tafsir edition identifier.",
+        "x-mcp-example": {"editionIdentifier": "ar.mukhtasar"}
+    }
+)
+async def get_tafsir_edition_by_identifier(
+    editionIdentifier: str = Path(..., description="Tafsir edition identifier (e.g., ar.mukhtasar)")
+):
+    try:
+        data = await edition_repo.get_tafsir_edition_by_identifier(editionIdentifier)
+        if data == "not_found":
+            response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Edition not found."})
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        if data == "not_tafsir":
+            response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Edition is not tafsir."})
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        if not data:
+            response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Edition not found."})
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        response = JSONResponse(status_code=200, content={"code": 200, "status": "OK", "data": data})
+        add_cache_headers(response, cache_tag=f"edition:tafsir:{editionIdentifier}")
+        return response
+    except Exception as e:
+        logger.error(f"An exception occurred in get_tafsir_edition_by_identifier: {str(e)}")
+        response = JSONResponse(status_code=400, content={"code": 400, "status": "Error", "data": "Something went wrong"})
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    
 @edition_router.get(
     "/narratorIdentifier",
     responses=getTheEditionNarratorIdentifiersResponse,
@@ -424,35 +474,31 @@ async def get_distinct_audio_editions():
 )
 async def get_edition_narrator_identifiers():
     try:
-        # Fetch the narrator identifiers for editions
         data = await edition_repo.get_editions_narrator_identifiers()
-        
-        # Check if the data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag="edition:narratorIdentifiers")
         return response
     except Exception:
-        # Log unexpected exceptions and return a generic error response
         logger.error("An exception occurred")
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
-  # Cache for 1 day
 @edition_router.get(
-    "/audio/{narratorIdentifier}",
+    "/audio/narrator/{narratorIdentifier}",
     responses=getTheAudioEditionByNarratorIdentifierResponse,
     tags=["Edition"],
     name="Get All Available Audio Editions by Narrator Identifier",
@@ -468,31 +514,28 @@ async def get_edition_narrator_identifiers():
 )
 async def get_audio_edition_by_narrator_identifier(narratorIdentifier: str = Path(..., description="A valid narrator identifier for edition", example="quran-warsh")):
     try:
-        # Fetch the data for the audio edition by narrator identifier
         data = await edition_repo.get_edition(format="audio", narrator=narratorIdentifier, type="versebyverse")
-        
-        # Check if the data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"edition:audio:narrator:{narratorIdentifier}")
         return response
     except Exception:
-        # Log unexpected exceptions and return a generic error response
         logger.error("An exception occurred")
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 @edition_router.get(
     "/analysis",
@@ -511,26 +554,25 @@ async def get_audio_edition_by_narrator_identifier(narratorIdentifier: str = Pat
 )
 async def get_editions_statistics():
     try:
-        # Fetch the simplified analysis
         data = await edition_repo.get_edition_analysis()
-        
-        # Check if the data is an error message (string)
         if isinstance(data, str):
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
-        
-        # Return the successful response
+            response.headers["Cache-Control"] = "no-store"
+            return response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
+        add_cache_headers(response, cache_tag="edition:analysis")
         return response
     except Exception as e:
-        # Log unexpected exceptions and return a generic error response
         logger.error("An exception occurred during editions analysis: %s", str(e))
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response

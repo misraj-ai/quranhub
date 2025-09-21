@@ -1,8 +1,11 @@
 
 
+
 from fastapi import APIRouter, Query, Path
+from fastapi.responses import JSONResponse
 from repositories.ayah_theme_repo import get_all_themes, get_themes_for_ayah
 from .ayah_theme_docs import getAyahThemesResponse, getThemesForAyahResponse
+from utils.helpers import add_cache_headers
 
 ayah_theme_router = APIRouter()
 
@@ -23,17 +26,21 @@ async def get_ayah_themes(
     offset: int = Query(0, ge=0, alias="offset", description="Number of themes to skip for pagination (default 0).")
 ):
     themes = await get_all_themes(limit=limit, offset=offset)
-    response = {
-        "code": 200,
-        "status": "OK",
-        "data": [
-            {
-                "name": t.name,
-                "keywords": t.keywords,
-                "totalAyahs": t.total_ayahs
-            } for t in themes
-        ]
-    }
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": [
+                {
+                    "name": t.name,
+                    "keywords": t.keywords,
+                    "totalAyahs": t.total_ayahs
+                } for t in themes
+            ]
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"ayah_theme:themes:{limit}:{offset}")
     return response
 
 
@@ -59,15 +66,25 @@ async def get_themes_for_ayah_endpoint(
 ):
     themes = await get_themes_for_ayah(surahId, ayahNumber, limit=limit, offset=offset)
     if not themes:
-        return {"code": 404, "status": "Not Found", "data": "No themes found for this ayah."}
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": [
-            {
-                "name": t.name,
-                "keywords": t.keywords,
-                "totalAyahs": t.total_ayahs
-            } for t in themes
-        ]
-    }
+        response = JSONResponse(
+            content={"code": 404, "status": "Not Found", "data": "No themes found for this ayah."},
+            status_code=404
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": [
+                {
+                    "name": t.name,
+                    "keywords": t.keywords,
+                    "totalAyahs": t.total_ayahs
+                } for t in themes
+            ]
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"ayah_theme:{surahId}:{ayahNumber}:{limit}:{offset}")
+    return response

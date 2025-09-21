@@ -8,7 +8,8 @@ from .page_docs import (
     getAllPagesMetadataResponse,
     getAllPagesMetadataByEditionResponse
 )
-from utils.logger import logger 
+from utils.logger import logger
+from utils.helpers import add_cache_headers
 from utils.config import DEFAULT_EDITION_IDENTIFIER
 
 page_router = APIRouter()
@@ -31,15 +32,18 @@ async def get_all_pages_metadata():
         data = await page_repo.get_all_pages()
 
         if isinstance(data, str):
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
+        add_cache_headers(response, cache_tag="page:metadata:all")
         return response
 
     except Exception as e:
@@ -67,15 +71,18 @@ async def get_all_pages_metadata_by_edition(
         data = await page_repo.get_all_pages(editionIdentifier)
 
         if isinstance(data, str):
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
+        add_cache_headers(response, cache_tag=f"page:metadata:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
@@ -107,28 +114,31 @@ async def get_page_by_number(
     try:
         # Validate pageNumber range
         if pageNumber < 1 or pageNumber > 604:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Page number should be between 1 and 604"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Fetch page data
         data = await page_repo.get_page(pageNumber, DEFAULT_EDITION_IDENTIFIER, words, limit, offset)
 
         # Check if data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"page:number:{pageNumber}")
         return response
 
     except Exception as e:
@@ -161,28 +171,31 @@ async def get_page_by_edition(
     try:
         # Validate pageNumber range
         if pageNumber < 1 or pageNumber > 604:
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Page number should be between 1 and 604"},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Fetch page data from the specified edition
         data = await page_repo.get_page(pageNumber, editionIdentifier, words, limit, offset)
 
         # Check if data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag=f"page:number:{pageNumber}:edition:{editionIdentifier}")
         return response
 
     except Exception as e:

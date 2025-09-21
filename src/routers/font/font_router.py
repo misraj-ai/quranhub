@@ -8,6 +8,8 @@ from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
 
 # Project imports
+from fastapi.responses import JSONResponse
+from utils.helpers import add_cache_headers
 from repositories.font_repo import (
     get_font_by_code,
     get_font_files,
@@ -44,7 +46,9 @@ font_router = APIRouter()
 )
 async def get_font_kinds():
     kinds = await get_all_font_kinds()
-    return {"code": 200, "status": "OK", "data": kinds}
+    response = JSONResponse(content={"code": 200, "status": "OK", "data": kinds}, status_code=200)
+    add_cache_headers(response, cache_tag="font:kinds")
+    return response
 
 @font_router.get(
     "/formats",
@@ -59,7 +63,9 @@ async def get_font_kinds():
 )
 async def get_font_formats():
     formats = await get_all_font_formats()
-    return {"code": 200, "status": "OK", "data": formats}
+    response = JSONResponse(content={"code": 200, "status": "OK", "data": formats}, status_code=200)
+    add_cache_headers(response, cache_tag="font:formats")
+    return response
 
 @font_router.get(
     "/archives",
@@ -74,7 +80,9 @@ async def get_font_formats():
 )
 async def get_font_archives():
     archives = await get_all_font_archives()
-    return {"code": 200, "status": "OK", "data": archives}
+    response = JSONResponse(content={"code": 200, "status": "OK", "data": archives}, status_code=200)
+    add_cache_headers(response, cache_tag="font:archives")
+    return response
 
 @font_router.get(
     "/categories",
@@ -89,7 +97,9 @@ async def get_font_archives():
 )
 async def get_font_categories():
     categories = await get_all_font_categories()
-    return {"code": 200, "status": "OK", "data": categories}
+    response = JSONResponse(content={"code": 200, "status": "OK", "data": categories}, status_code=200)
+    add_cache_headers(response, cache_tag="font:categories")
+    return response
 
 
 
@@ -109,24 +119,31 @@ async def font_detail(
 ):
     font = await get_font_by_code(fontCode)
     if not font:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     files = await get_font_files(font.font_id)
     files_by_kind = {k: [] for k in ["regular", "pack", "extras"]}
     for f in files:
         files_by_kind.setdefault(f.kind, []).append({"format": f.format, "url": f.url})
     page_range = await get_font_page_range(font.font_id)
     min_page, max_page = page_range if page_range else (None, None)
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": {
-            "code": font.code,
-            "name": font.name,
-            "category": font.category,
-            "files": files_by_kind,
-            "pageRange": {"min": min_page, "max": max_page} if min_page is not None else None
-        }
-    }
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": {
+                "code": font.code,
+                "name": font.name,
+                "category": font.category,
+                "files": files_by_kind,
+                "pageRange": {"min": min_page, "max": max_page} if min_page is not None else None
+            }
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"font:detail:{fontCode}")
+    return response
 
 @font_router.get(
     "/{fontCode}/files",
@@ -147,15 +164,22 @@ async def font_files(
 ):
     font = await get_font_by_code(fontCode)
     if not font:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     files = await get_font_files(font.font_id, kind, format, archive)
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": [
-            {"kind": f.kind, "format": f.format, "url": f.url} for f in files
-        ]
-    }
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": [
+                {"kind": f.kind, "format": f.format, "url": f.url} for f in files
+            ]
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"font:files:{fontCode}:{kind}:{format}:{archive}")
+    return response
 
 @font_router.get(
     "/{fontCode}/pages/{pageNumber}",
@@ -174,16 +198,18 @@ async def font_page_files(
 ):
     font = await get_font_by_code(fontCode)
     if not font:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     files = await get_font_page_files(font.font_id, page_number=pageNumber)
     if not files:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font or page not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font or page not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     formats = {f.format: f.url for f in files}
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": formats
-    }
+    response = JSONResponse(content={"code": 200, "status": "OK", "data": formats}, status_code=200)
+    add_cache_headers(response, cache_tag=f"font:pagefiles:{fontCode}:{pageNumber}")
+    return response
 
 @font_router.get(
     "/{fontCode}/pages",
@@ -204,15 +230,22 @@ async def list_font_page_files(
 ):
     font = await get_font_by_code(fontCode)
     if not font:
-        return JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font not found."})
+        response = JSONResponse(status_code=404, content={"code": 404, "status": "Not Found", "data": "Font not found."})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     result = await get_font_page_files(font.font_id, format=format, limit=limit, offset=offset)
-    return {
-        "code": 200,
-        "status": "OK",
-        "data": {
-            "total": result["total"],
-            "items": [
-                {"pageNumber": f.page_number, "format": f.format, "url": f.url} for f in result["items"]
-            ]
-        }
-    }
+    response = JSONResponse(
+        content={
+            "code": 200,
+            "status": "OK",
+            "data": {
+                "total": result["total"],
+                "items": [
+                    {"pageNumber": f.page_number, "format": f.format, "url": f.url} for f in result["items"]
+                ]
+            }
+        },
+        status_code=200
+    )
+    add_cache_headers(response, cache_tag=f"font:pagefiles:{fontCode}:{format}:{limit}:{offset}")
+    return response

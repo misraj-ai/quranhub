@@ -5,7 +5,9 @@ from repositories import meta_repo  # Using the repository now
 from .meta_docs import (
 getAllMetaResponse
 )
-from utils.logger import logger 
+
+from utils.logger import logger
+from utils.helpers import add_cache_headers
 
 meta_router = APIRouter()
 
@@ -32,23 +34,26 @@ async def get_all_meta():
 
         # Check if data is an error message (string)
         if isinstance(data, str):
-            
-            return JSONResponse(
+            response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "Something went wrong: " + data},
                 status_code=400
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Return successful response
         response = JSONResponse(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-          # Cache for 1 day (86400 seconds)
+        add_cache_headers(response, cache_tag="meta:all")
         return response
 
     except Exception as e:
         logger.error("An exception occurred: %s", str(e), exc_info=True)
-        return JSONResponse(
+        response = JSONResponse(
             content={"code": 400, "status": "Error", "data": "Something went wrong"},
             status_code=400
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
