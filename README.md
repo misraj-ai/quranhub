@@ -1,4 +1,4 @@
-# 🕌 QuranHub API
+# 🕌 Quran Hub API
 
 <div align="center">
 
@@ -24,7 +24,7 @@
 
 ## 📖 Overview
 
-QuranHub API is a powerful, feature-rich REST API developed by **Misraj AI** that provides comprehensive access to Quranic content, including multiple translations, tafsir (commentaries), audio recitations, and advanced search capabilities. Built with modern Python technologies and PostgreSQL, it serves as a complete backend solution for Islamic applications and research projects.
+Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** that provides comprehensive access to Quranic content, including multiple translations, tafsir (commentaries), audio recitations, and advanced search capabilities. Built with modern Python technologies and PostgreSQL, it serves as a complete backend solution for Islamic applications and research projects.
 
 **Full Documentation**: [https://qurani.ai](https://qurani.ai)
 
@@ -37,7 +37,7 @@ QuranHub API is a powerful, feature-rich REST API developed by **Misraj AI** tha
 **Content Coverage**
 - 📚 **+300** Total Editions
 - 📝 **+235** Text Editions  
-- 🎵 **+88** Audio Editions
+- 🔊 **+88** Audio Editions
 - 📊 **+354,346** Audio Files
 
 </td>
@@ -55,9 +55,9 @@ QuranHub API is a powerful, feature-rich REST API developed by **Misraj AI** tha
 </tr>
 </table>
 
-## 📖 QuranHub MCP Server
+## 📖 Quran Hub MCP Server
 
-The QuranHub MCP Server provides a rich set of tools for accessing and exploring the Quran programmatically. You can use these tools inside Cursor or any other MCP-compatible client.
+The Quran Hub MCP Server provides a rich set of tools for accessing and exploring the Quran programmatically. You can use these tools inside Cursor or any other MCP-compatible client.
 
 ### ⚙️ Setup
 
@@ -135,7 +135,7 @@ Manage and retrieve different Quran editions, translations, and formats.
 | `get_editions_by_format_and_type` | Editions by format and type | `format: "text", type: "narration"` |
 | `get_editions_analysis` | Statistical overview of editions | - |
 
-### 🎵 Audio & Recitation
+### 🔊 Audio & Recitation
 Access audio recitations and reciter information.
 
 | Tool | Description | Example Input |
