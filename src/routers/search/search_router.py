@@ -5,6 +5,11 @@ from utils.helpers import add_cache_headers
 from repositories import keyword_repo  # Using the refactored repository
 from .search_docs import getKeywordbySurahAndLanguageOrEditionResponse
 from utils.logger import logger 
+import urllib.parse
+
+    # Helper to sanitize cache tag for HTTP headers (percent-encode non-ASCII)
+def sanitize_cache_tag(tag: str) -> str:
+    return urllib.parse.quote(tag, safe=":")  # keep colons for readability
 
 search_router = APIRouter()
 
@@ -95,7 +100,8 @@ async def search_quran_by_keyword(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-        add_cache_headers(response, cache_tag=f"search:{keyword}:edition:{edition_id}")
+        cache_tag = f"search:{keyword}:edition:{edition_id}"
+        add_cache_headers(response, cache_tag=sanitize_cache_tag(cache_tag))
         return response
         
     except Exception as e:

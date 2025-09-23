@@ -16,7 +16,7 @@ hizb_quarter_router = APIRouter()
 
 # Cache for 1 day
 @hizb_quarter_router.get(
-    "/{hizb_quarter_number}",
+    "/{hizbQuarterNumber}",
     responses=getHizbQuarterbyNumberResponse,
     tags=["HizbQuarter"],
     openapi_extra={
@@ -28,13 +28,13 @@ hizb_quarter_router = APIRouter()
     }
 )
 async def get_hizb_quarter_by_number(
-    hizb_quarter_number: int = Path(..., ge=1, le=240, description="An integer between 1 and 240"),
+    hizbQuarterNumber: int = Path(..., ge=1, le=240, description="An integer between 1 and 240"),
     limit: int = Query(None, description="The number of ayahs that the response will be limited to.", example=2000),
     offset: int = Query(None, description="Offset ayahs in a hizb quarter by the given number", example=0)
 ):
     try:
-        # Validate hizb_quarter_number range
-        if hizb_quarter_number < 1 or hizb_quarter_number > 240:
+        # Validate hizbQuarterNumber range
+        if hizbQuarterNumber < 1 or hizbQuarterNumber > 240:
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "HizbQuarter number should be between 1 and 240"},
                 status_code=400
@@ -43,7 +43,7 @@ async def get_hizb_quarter_by_number(
             return response
 
         # Fetch hizb quarter data
-        data = await hizb_quarter_repo.get_hizb_quarter(hizb_quarter_number, DEFAULT_EDITION_IDENTIFIER, limit, offset)
+        data = await hizb_quarter_repo.get_hizb_quarter(hizbQuarterNumber, DEFAULT_EDITION_IDENTIFIER, limit, offset)
 
         # Check if data is an error message (string)
         if isinstance(data, str):
@@ -59,7 +59,7 @@ async def get_hizb_quarter_by_number(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-        add_cache_headers(response, cache_tag=f"hizb_quarter:{hizb_quarter_number}")
+        add_cache_headers(response, cache_tag=f"hizb_quarter:{hizbQuarterNumber}")
         return response
 
     except Exception as e:
@@ -74,7 +74,7 @@ async def get_hizb_quarter_by_number(
 
 # Cache for 1 day
 @hizb_quarter_router.get(
-    "/{hizb_quarter_number}/{edition_identifier}",
+    "/{hizbQuarterNumber}/{editionIdentifier}",
     responses=getHizbQuarterbyEditionResponse,
     tags=["HizbQuarter"],
     openapi_extra={
@@ -85,14 +85,14 @@ async def get_hizb_quarter_by_number(
     }
 )
 async def get_hizb_quarter_by_edition(
-    hizb_quarter_number: int = Path(..., ge=1, le=240, description="An integer between 1 and 240"),
-    edition_identifier: str = Path(..., description="A valid edition identifier for edition", example="quran-uthmani"),
+    hizbQuarterNumber: int = Path(..., ge=1, le=240, description="An integer between 1 and 240"),
+    editionIdentifier: str = Path(..., description="A valid edition identifier for edition", example="quran-uthmani"),
     limit: int = Query(None, description="The number of ayahs that the response will be limited to.", example=2000),
     offset: int = Query(None, description="Offset ayahs in a hizb quarter by the given number", example=0)
 ):
     try:
-        # Validate hizb_quarter_number range
-        if hizb_quarter_number < 1 or hizb_quarter_number > 240:
+        # Validate hizbQuarterNumber range
+        if hizbQuarterNumber < 1 or hizbQuarterNumber > 240:
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "HizbQuarter number should be between 1 and 240"},
                 status_code=400
@@ -101,7 +101,7 @@ async def get_hizb_quarter_by_edition(
             return response
 
         # Fetch hizb quarter data
-        data = await hizb_quarter_repo.get_hizb_quarter(hizb_quarter_number, edition_identifier, limit, offset)
+        data = await hizb_quarter_repo.get_hizb_quarter(hizbQuarterNumber, editionIdentifier, limit, offset)
 
         # Check if data is an error message (string)
         if isinstance(data, str):
@@ -117,7 +117,7 @@ async def get_hizb_quarter_by_edition(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-        add_cache_headers(response, cache_tag=f"hizb_quarter:{hizb_quarter_number}:edition:{edition_identifier}")
+        add_cache_headers(response, cache_tag=f"hizb_quarter:{hizbQuarterNumber}:edition:{editionIdentifier}")
         return response
 
     except Exception as e:
