@@ -35,16 +35,32 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 <td>
 
 **Content Coverage**
-- 📚 **+300** Total Editions
-- 📝 **+235** Text Editions  
-- 🔊 **+88** Audio Editions
+
+</td>
+<td>
+
+**Edition Types**
+
+</td>
+</tr>
+</table>
+### 📊 Database Statistics
+
+<table>
+<tr>
+<td>
+
+**Content Coverage**
+- 📚 **+362** Total Editions
+- 📝 **+274** Text Editions  
+- 🎵 **+88** Audio Editions
 - 📊 **+354,346** Audio Files
 
 </td>
 <td>
 
 **Edition Types**
-- 📖 **+117** Tafsir Editions
+- 📖 **+156** Tafsir Editions
 - 🌍 **+96** Translations
 - 🎤 **+45** Surah Recitations
 - 📤 **+12** Quran Scripts
