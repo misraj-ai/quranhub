@@ -1,11 +1,12 @@
 # Imports (deduplicated and ordered)
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY, JSONB
-from sqlalchemy import Column, Integer, Text, ForeignKey, String, ARRAY, UniqueConstraint, Index, Boolean, DateTime, CheckConstraint
+from sqlalchemy import Column, Integer, Text, ForeignKey, String, ARRAY, UniqueConstraint, Index, Boolean, DateTime, SmallInteger
 from sqlalchemy.orm import relationship
 from db.session import Base
 from sqlalchemy.sql import func
 # Constants
 SURAT_FOREIGN_KEY = "quranhub_schema.surat.id"
+
 class Ayat(Base):
     __tablename__ = "ayat"
     __table_args__ = {'schema': 'quranhub_schema'}  # Correct way to set schema
@@ -186,8 +187,7 @@ class Word(Base):
     position = Column(Integer, nullable=True)
     line_number = Column(Integer, nullable=True)
     text = Column(Text, nullable=True)
-    # Database generated column (computed by DB, not SQLAlchemy)
-    location = Column(Text, nullable=True)
+    location = Column(Text, nullable=True)  # Database generated column
     tajweed = Column(JSONB, nullable=True)
     v4_img_url = Column(Text, nullable=True)
     rq_img_url = Column(Text, nullable=True)
@@ -195,6 +195,7 @@ class Word(Base):
 
     # Relationships
     surat = relationship("Surat", backref="words")
+    morphologies = relationship("WordMorphology", back_populates="word", cascade="all, delete-orphan")  # NEW
 
     def __repr__(self):
         return f"<Word(id={self.id}, surat_id={self.surat_id}, numberinsurat={self.numberinsurat}, position={self.position}, text='{self.text}')>"
@@ -208,6 +209,7 @@ class Word(Base):
         if all([self.surat_id is not None, self.numberinsurat is not None, self.position is not None]):
             return f"{self.surat_id}:{self.numberinsurat}:{self.position}"
         return None
+    
 
 class QuranPhrase(Base):
     __tablename__ = "quran_phrase"
@@ -409,3 +411,75 @@ class MushafLine(Base):
 
     layout = relationship('MushafLayout', back_populates='lines')
 
+class MorphologicalTag(Base):
+    """
+    Morphological tags/symbols (romoz) for Quranic words.
+    Contains 2,468 unique tags including roots, grammatical markers, etc.
+    """
+    __tablename__ = "morphological_tag"
+    __table_args__ = (
+        Index('idx_morphological_tag_code', 'code'),
+        Index('idx_morphological_tag_category', 'category'),
+        {'schema': 'quranhub_schema'}
+    )
+
+    tag_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    code = Column(Text, nullable=False, unique=True)  # e.g., "فع", "جر", "سمو"
+    meaning = Column(Text, nullable=False)  # Full meaning in Arabic
+    user_meaning = Column(Text, nullable=True)  # User-friendly meaning
+    category = Column(Text, nullable=False)  # Root, Sarf, Irab, Afal, Lawahiq, etc.
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    # Relationships
+    word_morphologies = relationship("WordMorphology", back_populates="tag", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<MorphologicalTag(tag_id={self.tag_id}, code='{self.code}', category='{self.category}')>"
+
+class WordMorphology(Base):
+    """
+    Junction table linking words to their morphological tags.
+    Contains 2.5+ million word-tag associations.
+    """
+    __tablename__ = "word_morphology"
+    __table_args__ = (
+        UniqueConstraint('word_id', 'tag_code', name='uq_word_tag'),
+        Index('idx_word_morphology_word', 'word_id'),
+        Index('idx_word_morphology_tag', 'tag_code'),
+        Index('idx_word_morphology_word_tag', 'word_id', 'tag_code'),
+        {'schema': 'quranhub_schema'}
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    word_id = Column(Integer, ForeignKey("quranhub_schema.word.id", ondelete="CASCADE"), nullable=False)
+    tag_code = Column(Text, ForeignKey("quranhub_schema.morphological_tag.code", ondelete="CASCADE"), nullable=False)
+    tag_order = Column(SmallInteger, nullable=True)  # Order in JothorRomoz array
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    # Relationships
+    word = relationship("Word", back_populates="morphologies")
+    tag = relationship("MorphologicalTag", back_populates="word_morphologies")
+
+    def __repr__(self):
+        return f"<WordMorphology(id={self.id}, word_id={self.word_id}, tag_code='{self.tag_code}', order={self.tag_order})>"
+
+class WordMorphologyIndex(Base):
+    """
+    Materialized view for fast morphological tag statistics and lookups.
+    Pre-computed aggregations of tag usage across the Quran.
+    """
+    __tablename__ = "word_morphology_index"
+    __table_args__ = (
+        Index('idx_word_morphology_index_pk', 'tag_code', unique=True),
+        Index('idx_word_morphology_index_category', 'category'),
+        {'schema': 'quranhub_schema', 'info': {'is_view': True}}  # Mark as view
+    )
+
+    tag_code = Column(Text, primary_key=True, nullable=False)  # Primary key for the view
+    category = Column(Text, nullable=False)
+    meaning = Column(Text, nullable=False)
+    word_count = Column(Integer, nullable=False)  # Distinct words with this tag
+    surah_count = Column(Integer, nullable=False)  # Distinct surahs containing this tag
+
+    def __repr__(self):
+        return f"<WordMorphologyIndex(tag_code='{self.tag_code}', category='{self.category}', word_count={self.word_count})>"

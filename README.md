@@ -35,12 +35,17 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 <td>
 
 **Content Coverage**
-- 📚 **+430** Total Editions
+- 📚 **+430** Total Editions  
 - 📝 **+342** Text Editions  
-- 🔊 **+88** Audio Editions
-- 📊 **+354,346** Audio Files
+- 🔊 **+88** Audio Editions  
+- 📊 **+354,346** Audio Files  
+- 🧠 **+77,433** Quranic Words Analyzed  
+- 🏷️ **+2,468** Unique Morphological Tags  
+- 🌿 **+1,805** Arabic Roots  
+- 🔁 **+2.5M** Word–Tag Associations  
 
 </td>
+
 <td>
 
 **Edition Types**
@@ -196,6 +201,24 @@ Page layout and line structure information.
 | `get_layout_page_lines` | Line structure for pages | `layout: "hafs_15", page: 1` |
 | `get_layout_surah_lines` | Line structure for surah | `layout: "hafs_15", surah: 1` |
 | `layout_word_lookup` | Find page/line by word position | `layout: "hafs_15", from: 1, to: 7` |
+
+### 🧠 Morphological Analysis
+Comprehensive Quranic word morphology tools for linguistic, grammatical, and root-based exploration.
+
+| Tool | Description | Example Input |
+|------|--------------|---------------|
+| `get_word_morphology` | Get morphological breakdown for a specific word | `location: "1:1:1"` |
+| `search_by_tags` | Search words by morphological tags (AND/OR logic) | `tags: "فع,ضي", match_all: true` |
+| `search_by_category` | Find words within a tag category | `category: "Afal", tag_code: "فع"` |
+| `search_by_root` | Get all words derived from a root | `root: "حمد"` |
+| `get_all_roots` | List all Arabic roots with statistics | — |
+| `get_all_tags` | List all morphological tags with counts | — |
+| `get_tag_details` | Get tag meaning, usage, and examples | `tag_code: "فع"` |
+| `get_morphology_stats` | Get overall Quran morphology statistics | — |
+| `get_surah_profile` | Get morphology profile for a Surah | `surah_number: 1` |
+| `search_by_pattern` | Find words by morphological pattern (وزن) | `pattern: "فَعَلَ"` |
+| `compare_words` | Compare morphology of multiple words | `words: "1:1:1","1:2:1"` |
+| `get_all_categories` | List all morphological categories | — |
 
 ### 🔧 Utility Functions
 Basic utility and test functions.

@@ -28,6 +28,7 @@ from routers.similar_ayah.similar_ayah_router import similar_ayah_router
 from routers.ayah_theme.ayah_theme_router import ayah_theme_router
 from routers.font.font_router import font_router
 from routers.mushaf_layout.mushaf_layout_router import mushaf_layout_router
+from routers.morphology.morphology_router import morphology_router
 
 
 tags_metadata = [
@@ -51,6 +52,7 @@ tags_metadata = [
     {"name": "Similar Ayah", "description": "Ayahs from the Quran that share similarities in meaning, context, or wording. This data allows you to explore and access Ayahs that closely align with each other."},
     {"name": "Font", "description": "Font metadata, font files, and per-page font resources for Quranic scripts."},
     {"name": "Mushaf Layout", "description": "Mushaf layout metadata, page/line structure, and surah/word lookups for Quranic pages."},
+    {"name": "Morphology", "description": "Morphological analysis and resources for Quranic words."}
 ]
 # Remove lifespan function and argument
 app = FastAPI(
@@ -174,6 +176,7 @@ app.include_router(similar_ayah_router, prefix="/v1/similar-ayah")
 app.include_router(ayah_theme_router, prefix="/v1/ayah-theme")
 app.include_router(font_router, prefix="/v1/font")
 app.include_router(mushaf_layout_router, prefix="/v1/mushaf-layouts")
+app.include_router(morphology_router, prefix="/v1/morphology")
 
 
 excluded_keywords = ["health", "liveness", "startup"]
