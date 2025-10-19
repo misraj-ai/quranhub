@@ -60,6 +60,18 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 </tr>
 </table>
 
+## ⚡ Performance
+
+The Quran Hub API is optimized for speed and scalability, powered by **FastAPI**, **PostgreSQL**, and **Cloudflare edge caching**.
+
+- ⚙️ **Average Response Time**: ~60 ms  
+- 🚀 **Caching Layer**: Full Cloudflare cache integration for static and dynamic endpoints  
+- 🌐 **Global CDN**: Responses are served through distributed edge nodes for minimal latency worldwide  
+- 🧩 **Optimized Queries**: Indexed views and materialized statistics for instant retrieval  
+- 🔁 **Persistent Connections**: Connection pooling and async request handling ensure high throughput  
+
+These optimizations make Quran Hub one of the fastest and most reliable Quranic APIs available.
+
 ## 📖 Quran Hub MCP Server
 
 The Quran Hub MCP Server provides a rich set of tools for accessing and exploring the Quran programmatically. You can use these tools inside Cursor or any other MCP-compatible client.
