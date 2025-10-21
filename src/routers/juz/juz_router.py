@@ -27,9 +27,9 @@ juz_router = APIRouter()
         "x-mcp-example": {}
     }
 )
-async def get_all_juzs_metadata():
+async def get_all_juzs_metadata(includeHizbs: bool = Query(False, description="If true, include hizbs (and halves) structure per Juz")):
     try:
-        data = await juz_repo.get_all_juzs()
+        data = await juz_repo.get_all_juzs(include_hizbs=includeHizbs)
 
         if isinstance(data, str):
             response = JSONResponse(
@@ -67,10 +67,11 @@ async def get_all_juzs_metadata():
     }
 )
 async def get_all_juzs_metadata_by_edition(
-    editionIdentifier: str = Path(..., description="Edition identifier (e.g., 'quran-uthmani') as a required path parameter, not a query parameter.", example="quran-uthmani")
+    editionIdentifier: str = Path(..., description="Edition identifier (e.g., 'quran-uthmani') as a required path parameter, not a query parameter.", example="quran-uthmani"),
+    includeHizbs: bool = Query(False, description="If true, include hizbs (and halves) structure per Juz")
 ):
     try:
-        data = await juz_repo.get_all_juzs(editionIdentifier)
+        data = await juz_repo.get_all_juzs(editionIdentifier, include_hizbs=includeHizbs)
 
         if isinstance(data, str):
             response = JSONResponse(

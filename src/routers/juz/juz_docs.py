@@ -10,56 +10,161 @@ Features: Metadata endpoints, edition-specific queries, pagination, multiple sur
 """
 
 # GET /juz/metadata - Get All Juzs Metadata
+# GET /juz/metadata - Get All Juzs Metadata
 getAllJuzsMetadataResponse = {
     200: {
-        "description": "Returns metadata for all 30 Juzs (sections) of the Quran, including first/last ayah, surah, page, and ayah count. Useful for navigation, study, and LLM workflows.",
+        "description": (
+            "Returns metadata for all 30 Juzs (sections) of the Quran. "
+            "Supports the query parameter `includeHizbs` (boolean). "
+            "If `includeHizbs=true`, the response includes detailed Hizb and Hizb-half metadata "
+            "for each Juz; if false or omitted, the response uses the classic metadata structure."
+        ),
         "content": {
             "application/json": {
-                "example": {
-                    "code": 200,
-                    "status": "OK",
-                    "data": [
-                        {
-                            "number": 1,
-                            "firstAyahNumber": 1,
-                            "firstSurahNumber": 1,
-                            "firstPage": 1,
-                            "lastAyahNumber": 148,
-                            "lastSurahNumber": 2,
-                            "lastPage": 21,
-                            "ayahsCount": 148
-                        },
-                        {
-                            "number": 2,
-                            "firstAyahNumber": 149,
-                            "firstSurahNumber": 2,
-                            "firstPage": 22,
-                            "lastAyahNumber": 309,
-                            "lastSurahNumber": 2,
-                            "lastPage": 41,
-                            "ayahsCount": 161
-                        },
-                        {
-                            "number": 15,
-                            "firstAyahNumber": 2801,
-                            "firstSurahNumber": 17,
-                            "firstPage": 282,
-                            "lastAyahNumber": 3159,
-                            "lastSurahNumber": 18,
-                            "lastPage": 301,
-                            "ayahsCount": 359
-                        },
-                        {
-                            "number": 30,
-                            "firstAyahNumber": 5673,
-                            "firstSurahNumber": 78,
-                            "firstPage": 582,
-                            "lastAyahNumber": 6236,
-                            "lastSurahNumber": 114,
-                            "lastPage": 604,
-                            "ayahsCount": 564
+                "examples": {
+                    # Your original (classic) minimal metadata example
+                    "classic": {
+                        "summary": "Classic Juz Metadata (default)",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": [
+                                {
+                                    "number": 1,
+                                    "firstAyahNumber": 1,
+                                    "firstSurahNumber": 1,
+                                    "firstPage": 1,
+                                    "lastAyahNumber": 148,
+                                    "lastSurahNumber": 2,
+                                    "lastPage": 21,
+                                    "ayahsCount": 148
+                                },
+                                {
+                                    "number": 2,
+                                    "firstAyahNumber": 149,
+                                    "firstSurahNumber": 2,
+                                    "firstPage": 22,
+                                    "lastAyahNumber": 309,
+                                    "lastSurahNumber": 2,
+                                    "lastPage": 41,
+                                    "ayahsCount": 161
+                                },
+                                {
+                                    "number": 15,
+                                    "firstAyahNumber": 2801,
+                                    "firstSurahNumber": 17,
+                                    "firstPage": 282,
+                                    "lastAyahNumber": 3159,
+                                    "lastSurahNumber": 18,
+                                    "lastPage": 301,
+                                    "ayahsCount": 359
+                                },
+                                {
+                                    "number": 30,
+                                    "firstAyahNumber": 5673,
+                                    "firstSurahNumber": 78,
+                                    "firstPage": 582,
+                                    "lastAyahNumber": 6236,
+                                    "lastSurahNumber": 114,
+                                    "lastPage": 604,
+                                    "ayahsCount": 564
+                                }
+                            ]
                         }
-                    ]
+                    },
+                    # New example when includeHizbs=true
+                    "withHizbs": {
+                        "summary": "Juz Metadata with Hizbs (includeHizbs=true)",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": {
+                                "juzs": [
+                                    {
+                                        "number": 1,
+                                        "firstPage": 1,
+                                        "firstAyah": {
+                                            "number": 1,
+                                            "text": "﻿بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                                            "numberInSurah": 1
+                                        },
+                                        "firstSurah": {
+                                            "number": 1,
+                                            "name": "سورة الفاتحة",
+                                            "englishName": "Al-Faatiha",
+                                            "englishNameTranslation": "The Opening",
+                                            "revelationType": "Meccan",
+                                            "numberOfAyahs": 7
+                                        },
+                                        "hizbs": [
+                                            {
+                                                "number": 1,
+                                                "halves": [
+                                                    {
+                                                        "number": 1,
+                                                        "firstSurah": {
+                                                            "number": 1,
+                                                            "name": "سورة الفاتحة",
+                                                            "englishName": "Al-Faatiha"
+                                                        },
+                                                        "firstAyah": {
+                                                            "number": 1,
+                                                            "numberInSurah": 1,
+                                                            "text": "﻿بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
+                                                        }
+                                                    },
+                                                    {
+                                                        "number": 2,
+                                                        "firstSurah": {
+                                                            "number": 2,
+                                                            "name": "سورة البقرة",
+                                                            "englishName": "Al-Baqarah"
+                                                        },
+                                                        "firstAyah": {
+                                                            "number": 25,
+                                                            "numberInSurah": 25,
+                                                            "text": "وَبَشِّرِ الَّذِينَ آمَنُوا ..."
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "number": 2,
+                                                "halves": [
+                                                    {
+                                                        "number": 1,
+                                                        "firstSurah": {
+                                                            "number": 2,
+                                                            "name": "سورة البقرة",
+                                                            "englishName": "Al-Baqarah"
+                                                        },
+                                                        "firstAyah": {
+                                                            "number": 75,
+                                                            "numberInSurah": 75,
+                                                            "text": "أَفَتَطْمَعُونَ أَن يُؤْمِنُوا لَكُمْ..."
+                                                        }
+                                                    },
+                                                    {
+                                                        "number": 2,
+                                                        "firstSurah": {
+                                                            "number": 2,
+                                                            "name": "سورة البقرة",
+                                                            "englishName": "Al-Baqarah"
+                                                        },
+                                                        "firstAyah": {
+                                                            "number": 121,
+                                                            "numberInSurah": 121,
+                                                            "text": "الَّذِينَ آتَيْنَاهُمُ..."
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -78,55 +183,170 @@ getAllJuzsMetadataResponse = {
     }
 }
 
+
+# GET /juz/metadata/{editionIdentifier} - Get All Juzs Metadata by Edition
 # GET /juz/metadata/{editionIdentifier} - Get All Juzs Metadata by Edition
 getAllJuzsMetadataByEditionResponse = {
     200: {
-    "description": "Returns metadata for all 30 Juzs from a specific edition. The editionIdentifier (e.g., 'quran-uthmani') must be provided as a path parameter, not as a query parameter. Includes first/last ayah, surah, page, ayah count, and edition details. Useful for edition-specific navigation and LLM workflows.",
+        "description": (
+            "Returns metadata for all 30 Juzs from a specific edition. "
+            "Supports the `includeHizbs` query parameter. "
+            "If true, adds hizb and hizb-half structure for each Juz; if false or omitted, returns the classic structure. "
+            "The editionIdentifier (e.g., 'quran-uthmani') must be provided as a path parameter."
+        ),
         "content": {
             "application/json": {
-                "example": {
-                    "code": 200,
-                    "status": "OK",
-                    "data": [
-                        {
-                            "number": 1,
-                            "firstAyahNumber": 1,
-                            "firstSurahNumber": 1,
-                            "firstPage": 1,
-                            "lastAyahNumber": 148,
-                            "lastSurahNumber": 2,
-                            "lastPage": 21,
-                            "ayahsCount": 148,
-                            "edition": {
-                                "identifier": "en.sahih",
-                                "language": "en",
-                                "name": "Saheeh International",
-                                "englishName": "Saheeh International",
-                                "format": "text",
-                                "type": "translation",
-                                "direction": "ltr"
-                            }
-                        },
-                        {
-                            "number": 30,
-                            "firstAyahNumber": 5673,
-                            "firstSurahNumber": 78,
-                            "firstPage": 582,
-                            "lastAyahNumber": 6236,
-                            "lastSurahNumber": 114,
-                            "lastPage": 604,
-                            "ayahsCount": 564,
-                            "edition": {
-                                "identifier": "en.sahih",
-                                "language": "en",
-                                "name": "Saheeh International",
-                                "englishName": "Saheeh International",
-                                "format": "text",
-                                "type": "translation",
-                                "direction": "ltr"
+                "examples": {
+                    # Your original (classic) per-edition example
+                    "classic": {
+                        "summary": "Classic Juz Metadata by Edition (default)",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": [
+                                {
+                                    "number": 1,
+                                    "firstAyahNumber": 1,
+                                    "firstSurahNumber": 1,
+                                    "firstPage": 1,
+                                    "lastAyahNumber": 148,
+                                    "lastSurahNumber": 2,
+                                    "lastPage": 21,
+                                    "ayahsCount": 148,
+                                    "edition": {
+                                        "identifier": "en.sahih",
+                                        "language": "en",
+                                        "name": "Saheeh International",
+                                        "englishName": "Saheeh International",
+                                        "format": "text",
+                                        "type": "translation",
+                                        "direction": "ltr"
+                                    }
+                                },
+                                {
+                                    "number": 30,
+                                    "firstAyahNumber": 5673,
+                                    "firstSurahNumber": 78,
+                                    "firstPage": 582,
+                                    "lastAyahNumber": 6236,
+                                    "lastSurahNumber": 114,
+                                    "lastPage": 604,
+                                    "ayahsCount": 564,
+                                    "edition": {
+                                        "identifier": "en.sahih",
+                                        "language": "en",
+                                        "name": "Saheeh International",
+                                        "englishName": "Saheeh International",
+                                        "format": "text",
+                                        "type": "translation",
+                                        "direction": "ltr"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    # New example when includeHizbs=true
+                    "withHizbs": {
+                        "summary": "Juz Metadata by Edition with Hizbs (includeHizbs=true)",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": {
+                                "juzs": [
+                                    {
+                                        "number": 1,
+                                        "firstPage": 1,
+                                        "firstAyah": {
+                                            "number": 1,
+                                            "text": "﻿بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                                            "numberInSurah": 1
+                                        },
+                                        "firstSurah": {
+                                            "number": 1,
+                                            "name": "سورة الفاتحة",
+                                            "englishName": "Al-Faatiha",
+                                            "englishNameTranslation": "The Opening",
+                                            "revelationType": "Meccan",
+                                            "numberOfAyahs": 7
+                                        },
+                                        "hizbs": [
+                                            {
+                                                "number": 1,
+                                                "halves": [
+                                                    {
+                                                        "number": 1,
+                                                        "firstSurah": {
+                                                            "number": 1,
+                                                            "name": "سورة الفاتحة",
+                                                            "englishName": "Al-Faatiha"
+                                                        },
+                                                        "firstAyah": {
+                                                            "number": 1,
+                                                            "numberInSurah": 1,
+                                                            "text": "﻿بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
+                                                        }
+                                                    },
+                                                    {
+                                                        "number": 2,
+                                                        "firstSurah": {
+                                                            "number": 2,
+                                                            "name": "سورة البقرة",
+                                                            "englishName": "Al-Baqarah"
+                                                        },
+                                                        "firstAyah": {
+                                                            "number": 25,
+                                                            "numberInSurah": 25,
+                                                            "text": "وَبَشِّرِ الَّذِينَ آمَنُوا ..."
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "number": 2,
+                                                "halves": [
+                                                    {
+                                                        "number": 1,
+                                                        "firstSurah": {
+                                                            "number": 2,
+                                                            "name": "سورة البقرة",
+                                                            "englishName": "Al-Baqarah"
+                                                        },
+                                                        "firstAyah": {
+                                                            "number": 75,
+                                                            "numberInSurah": 75,
+                                                            "text": "أَفَتَطْمَعُونَ أَن يُؤْمِنُوا لَكُمْ..."
+                                                        }
+                                                    },
+                                                    {
+                                                        "number": 2,
+                                                        "firstSurah": {
+                                                            "number": 2,
+                                                            "name": "سورة البقرة",
+                                                            "englishName": "Al-Baqarah"
+                                                        },
+                                                        "firstAyah": {
+                                                            "number": 121,
+                                                            "numberInSurah": 121,
+                                                            "text": "الَّذِينَ آتَيْنَاهُمُ..."
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "edition": {
+                                    "identifier": "quran-uthmani",
+                                    "language": "ar",
+                                    "name": "Uthmani",
+                                    "englishName": "Uthmani",
+                                    "format": "text",
+                                    "type": "quran",
+                                    "direction": "rtl"
+                                }
                             }
                         }
-                    ]
+                    }
                 }
             }
         }
@@ -144,6 +364,7 @@ getAllJuzsMetadataByEditionResponse = {
         }
     }
 }
+
 
 # GET /juz/{juzNumber} - Get Juz by Number
 getTheJuzResponse = {
