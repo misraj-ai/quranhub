@@ -124,7 +124,6 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
         if isinstance(edition, str):  # error string
             return edition
         elif isinstance(edition, list):
-            # Select the versebyverse/text edition from your pair
             edition = edition[0] if edition[0].type == "versebyverse" else edition[1]
 
         edition_id = edition.id
@@ -137,15 +136,15 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
         juzs_info = []
 
         async with AsyncSessionLocal() as session:
-            # We need hizbquarter_id (and page_id) to build hizbs/halves when requested.
             result = await session.execute(
                 select(
                     Ayat.juz_id,
-                    Ayat.number,            # global ayah number (used to order quarter starts)
+                    Ayat.hizb_id,           # Use hizb_id directly!
+                    Ayat.hizbquarter_id,
+                    Ayat.number,
                     Ayat.text,
                     Ayat.numberinsurat,
                     Ayat.page_id,
-                    Ayat.hizbquarter_id,    # used to detect quarter starts per Juz
                     Surat.id,
                     Surat.name,
                     Surat.englishname,
@@ -162,15 +161,16 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
             if not fetched_rows:
                 return "No Juzs found."
 
-            # Build the base Juz metadata and (optionally) collect first-ayah per hizbquarter within each Juz
-            juz_data_map = {}         # {juz_id: { base metadata ... }}
-            # {juz_id: {quarter_id: { "_firstAyahNumber": int, "firstPage": int, "firstAyah": {...}, "firstSurah": {...} }}}
+            juz_data_map = {}
+            # {juz_id: {hizb_id: {"_firstAyahNumber": int, ...}}}
+            first_hizb_starts = {}
+            # {juz_id: {hizbquarter_id: {"_firstAyahNumber": int, ...}}}
             first_quarter_starts = {}
 
             for row in fetched_rows:
                 juz_id = row.juz_id
 
-                # Initialize base Juz metadata on first encounter of this juz_id
+                # Initialize base Juz metadata on first encounter
                 if juz_id not in juz_data_map:
                     juz_data_map[juz_id] = {
                         "number": juz_id,
@@ -191,14 +191,14 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
                     }
 
                 if include_hizbs:
-                    qmap = first_quarter_starts.setdefault(juz_id, {})
-                    qid = row.hizbquarter_id
-                    # Save the *first* occurrence (lowest ayah number) of this quarter within the current Juz
-                    # This guarantees we pick the correct "start" for each quarter in this Juz.
-                    if qid is not None and qid not in qmap:
-                        qmap[qid] = {
-                            "_firstAyahNumber": row.number,  # for reliable ordering
-                            "firstPage": row.page_id,        # <-- include firstPage per quarter
+                    # Track first ayah of each HIZB within this juz
+                    hizb_map = first_hizb_starts.setdefault(juz_id, {})
+                    hizb_id = row.hizb_id
+                    if hizb_id is not None and hizb_id not in hizb_map:
+                        hizb_map[hizb_id] = {
+                            "_firstAyahNumber": row.number,
+                            "_hizb_id": hizb_id,
+                            "firstPage": row.page_id,
                             "firstAyah": {
                                 "number": row.number,
                                 "numberInSurah": row.numberinsurat,
@@ -211,63 +211,86 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
                             }
                         }
 
-            # Convert to list while preserving natural Juz order
+                    # Track first ayah of each QUARTER within this juz (for halves)
+                    quarter_map = first_quarter_starts.setdefault(juz_id, {})
+                    quarter_id = row.hizbquarter_id
+                    if quarter_id is not None and quarter_id not in quarter_map:
+                        quarter_map[quarter_id] = {
+                            "_firstAyahNumber": row.number,
+                            "_quarter_id": quarter_id,
+                            "_hizb_id": hizb_id,  # Track which hizb this quarter belongs to
+                            "firstPage": row.page_id,
+                            "firstAyah": {
+                                "number": row.number,
+                                "numberInSurah": row.numberinsurat,
+                                "text": row.text
+                            },
+                            "firstSurah": {
+                                "number": row.id,
+                                "name": row.name,
+                                "englishName": row.englishname
+                            }
+                        }
+
             juzs_info = list(juz_data_map.values())
 
-        # If requested, compute hizbs (2 per Juz) from the first 4 quarters we observe in that Juz
+        # Build hizbs structure: 2 hizbs per juz, each with 2 halves (4 quarters total per juz = 8 quarter-starts)
         if include_hizbs:
             for juz in juzs_info:
                 juz_id = juz["number"]
-                qmap = first_quarter_starts.get(juz_id, {})
+                hizb_map = first_hizb_starts.get(juz_id, {})
+                quarter_map = first_quarter_starts.get(juz_id, {})
 
-                # Order the quarters for this Juz by the first ayah's global number to ensure correct sequence
+                # Get the 2 hizbs for this juz, ordered by hizb_id
+                ordered_hizbs = sorted(
+                    hizb_map.values(),
+                    key=lambda d: d["_hizb_id"]
+                )[:2]  # Should be exactly 2 hizbs per juz
+
+                # Get all quarters for this juz, ordered
                 ordered_quarters = sorted(
-                    qmap.values(),
-                    key=lambda d: d["_firstAyahNumber"]
+                    quarter_map.values(),
+                    key=lambda d: d["_quarter_id"]
                 )
 
-                # Expect 4 quarters per Juz. If data anomalies produce more, take the first 4.
-                # If fewer are present, degrade gracefully.
-                ordered_quarters = ordered_quarters[:4]
+                # Group quarters by their hizb_id
+                quarters_by_hizb = {}
+                for q in ordered_quarters:
+                    h_id = q["_hizb_id"]
+                    if h_id not in quarters_by_hizb:
+                        quarters_by_hizb[h_id] = []
+                    quarters_by_hizb[h_id].append(q)
 
                 hizbs = []
-                if len(ordered_quarters) >= 2:
-                    q1, q2 = ordered_quarters[0], ordered_quarters[1]
+                for idx, hizb_data in enumerate(ordered_hizbs, start=1):
+                    hizb_id = hizb_data["_hizb_id"]
+                    hizb_quarters = quarters_by_hizb.get(hizb_id, [])
+
+                    # Each hizb has 4 quarters; we create 2 halves (quarters 1-2 and 3-4)
+                    halves = []
+                    if len(hizb_quarters) >= 1:
+                        halves.append({
+                            "number": 1,
+                            "firstPage": hizb_quarters[0]["firstPage"],
+                            "firstSurah": hizb_quarters[0]["firstSurah"],
+                            "firstAyah": hizb_quarters[0]["firstAyah"]
+                        })
+                    if len(hizb_quarters) >= 3:
+                        # Second half starts at quarter 3
+                        halves.append({
+                            "number": 2,
+                            "firstPage": hizb_quarters[2]["firstPage"],
+                            "firstSurah": hizb_quarters[2]["firstSurah"],
+                            "firstAyah": hizb_quarters[2]["firstAyah"]
+                        })
+
                     hizbs.append({
-                        "number": 1,
-                        "halves": [
-                            {
-                                "number": 1,
-                                "firstPage": q1["firstPage"],              # <-- added
-                                "firstSurah": q1["firstSurah"],
-                                "firstAyah": q1["firstAyah"]
-                            },
-                            {
-                                "number": 2,
-                                "firstPage": q2["firstPage"],              # <-- added
-                                "firstSurah": q2["firstSurah"],
-                                "firstAyah": q2["firstAyah"]
-                            },
-                        ]
-                    })
-                if len(ordered_quarters) >= 4:
-                    q3, q4 = ordered_quarters[2], ordered_quarters[3]
-                    hizbs.append({
-                        "number": 2,
-                        "halves": [
-                            {
-                                "number": 1,
-                                "firstPage": q3["firstPage"],              # <-- added
-                                "firstSurah": q3["firstSurah"],
-                                "firstAyah": q3["firstAyah"]
-                            },
-                            {
-                                "number": 2,
-                                "firstPage": q4["firstPage"],              # <-- added
-                                "firstSurah": q4["firstSurah"],
-                                "firstAyah": q4["firstAyah"]
-                            },
-                        ]
+                        "number": idx,  # 1 or 2 within this juz
+                        "hizbNumber": hizb_id,  # Global hizb number (1-60)
+                        "firstPage": hizb_data["firstPage"],
+                        "firstSurah": hizb_data["firstSurah"],
+                        "firstAyah": hizb_data["firstAyah"],
+                        "halves": halves
                     })
 
                 if hizbs:

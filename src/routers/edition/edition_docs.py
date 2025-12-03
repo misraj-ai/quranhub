@@ -389,6 +389,97 @@ getTheEditionByTypeResponse = {
     }
 }
 
+getTheEditionByTypeAndLanguageResponse = {
+    200: {
+        "description": "Successful Response - All editions matching the specified type and language combination",
+        "content": {
+            "application/json": {
+                "examples": {
+                    "arabic_translations": {
+                        "summary": "Arabic Translation Editions",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": [
+                                {
+                                    "identifier": "ar.muyassar",
+                                    "language": "ar",
+                                    "name": "تفسير المیسر",
+                                    "englishName": "Al-Muyassar",
+                                    "format": "text",
+                                    "type": "translation",
+                                    "direction": "rtl",
+                                    "narratorIdentifier": None
+                                }
+                            ]
+                        }
+                    },
+                    "english_translations": {
+                        "summary": "English Translation Editions",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": [
+                                {
+                                    "identifier": "en.sahih",
+                                    "language": "en",
+                                    "name": "Saheeh International",
+                                    "englishName": "Saheeh International",
+                                    "format": "text",
+                                    "type": "translation",
+                                    "direction": "ltr",
+                                    "narratorIdentifier": None
+                                },
+                                {
+                                    "identifier": "en.maududi",
+                                    "language": "en",
+                                    "name": "Maududi",
+                                    "englishName": "Abul Ala Maududi",
+                                    "format": "text",
+                                    "type": "translation",
+                                    "direction": "ltr",
+                                    "narratorIdentifier": None
+                                }
+                            ]
+                        }
+                    },
+                    "arabic_tafsir": {
+                        "summary": "Arabic Tafsir Editions",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": [
+                                {
+                                    "identifier": "ar.mukhtasar",
+                                    "language": "ar",
+                                    "name": "المختصر في التفسير",
+                                    "englishName": "Al-Mukhtasar",
+                                    "format": "text",
+                                    "type": "tafsir",
+                                    "direction": "rtl",
+                                    "narratorIdentifier": None
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    400: {
+        "description": "Bad Request - Invalid type/language combination or no editions found",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 400,
+                    "status": "Error",
+                    "data": "Something wrong happened: No editions found for this type and language combination"
+                }
+            }
+        }
+    }
+}
+
 getTheEditionFormatsResponse = {
     200: {
         "description": "Successful Response - Available edition formats distinguishing between textual and audio content",

@@ -8,6 +8,7 @@ from .edition_docs import (
     getTheEditionByLanguageResponse,
     getTheEditionTypesResponse,
     getTheEditionByTypeResponse,
+    getTheEditionByTypeAndLanguageResponse,
     getTheEditionNarratorIdentifiersResponse,
     getTheEditionFormatsResponse,
     getTheEditionByFormatResponse,
@@ -220,6 +221,49 @@ async def get_the_edition_by_type(type: str = Path(..., description="A valid typ
             status_code=200
         )
         add_cache_headers(response, cache_tag=f"edition:type:{type}")
+        return response
+    except Exception as e:
+        # Log unexpected exceptions and return a generic error response
+        logger.error("An exception occurred: %s", str(e))
+        return JSONResponse(
+            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+            status_code=400
+        )
+
+  # Cache for 1 day
+@edition_router.get(
+    "/type/{type}/language/{language}",
+    responses=getTheEditionByTypeAndLanguageResponse,
+    tags=["Edition"],
+    name="Get All Available Editions by Type and Language",
+    summary="List all editions by type and language",
+    description="Lists all available editions for a given type and language combination. Use this to discover resources matching both criteria for further queries or display.",
+    openapi_extra={
+        "x-agent-hints": "Call this endpoint to list all editions for a specific type and language. Use both values to filter editions and use the identifiers in subsequent calls.",
+        "x-mcp-example": {
+            "name": "get_editions_by_type_and_language_v1_edition_type_type_language_language_get",
+            "arguments": {"type": "translation", "language": "en"}
+        }
+    }
+)
+async def get_edition_by_type_and_language(
+    type: str = Path(..., description="A valid type for edition", example="translation"),
+    language: str = Path(..., min_length=2, max_length=2, description="A 2-digit language code", example="en")
+):
+    try:
+        data = await edition_repo.get_edition(type=type, language=language)
+        if isinstance(data, str):
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
+                status_code=400
+            )
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        response = JSONResponse(
+            content={"code": 200, "status": "OK", "data": data},
+            status_code=200
+        )
+        add_cache_headers(response, cache_tag=f"edition:type:{type}:language:{language}")
         return response
     except Exception as e:
         # Log unexpected exceptions and return a generic error response

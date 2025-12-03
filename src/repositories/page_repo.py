@@ -72,6 +72,102 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
         surahs = []
         surah_ids = []
         surahs_ayat_counter = {}
+        # Special case: in quran-aldouri, ayah 2:219 is split between pages 34 and 35.
+        # For page 35 we need to also show the continuation of 2:219, but only its words
+        # that are marked with page_number == 35 by word_repo.
+        if words and edition_identifier == "quran-aldouri" and page_number == 35:
+            async with AsyncSessionLocal() as session2:
+                prev_res = await session2.execute(
+                    select(
+                        Ayat.number,
+                        Ayat.text,
+                        Ayat.numberinsurat,
+                        Ayat.juz_id,
+                        Ayat.manzil_id,
+                        Ayat.page_id,
+                        Ayat.ruku_id,
+                        Ayat.hizbquarter_id,
+                        Ayat.sajda_id,
+                        Surat.id,
+                        Surat.name,
+                        Surat.englishname,
+                        Surat.englishtranslation,
+                        Surat.revelationcity,
+                        Surat.numberofayats,
+                    )
+                    .join(Surat, Ayat.surat_id == Surat.id)
+                    .filter(
+                        Ayat.surat_id == 2,          # Surah al-Baqarah
+                        Ayat.numberinsurat == 219,   # Ayah 219
+                        Ayat.edition_id == edition_id,
+                    )
+                )
+                prev_item = prev_res.first()
+
+            if prev_item:
+                # Build an ayah object for 2:219, but mark page as 35
+                extra_ayah = {
+                    "number": prev_item.number,
+                    "text": prev_item.text,
+                    "surah": {
+                        "number": prev_item.id,
+                        "name": prev_item.name,
+                        "englishName": prev_item.englishname,
+                        "englishNameTranslation": prev_item.englishtranslation,
+                        "revelationType": prev_item.revelationcity,
+                        "numberOfAyahs": prev_item.numberofayats,
+                    },
+                    "numberInSurah": prev_item.numberinsurat,
+                    "juz": prev_item.juz_id,
+                    "manzil": prev_item.manzil_id,
+                    "page": page_number,  # override: this response is for page 35
+                    "ruku": prev_item.ruku_id,
+                    "hizbQuarter": prev_item.hizbquarter_id,
+                    "sajda": prev_item.sajda_id if prev_item.sajda_id else False,
+                }
+
+                # Get all words for 2:219 using its original page_id (34)
+                if edition.type == "narration" or edition.format == "audio":
+                    extra_words = await get_words(
+                        prev_item.id,
+                        prev_item.numberinsurat,
+                        prev_item.page_id,   # 34, so SPECIAL SPLIT in word_repo works
+                        prev_item.text,
+                        edition_identifier,
+                        last_ayah=None,
+                        is_narration=True,
+                    )
+                else:
+                    extra_words = await get_words(
+                        prev_item.id,
+                        prev_item.numberinsurat,
+                        prev_item.page_id,
+                        prev_item.text,
+                        edition_identifier,
+                        last_ayah=None,
+                    )
+
+                # Keep only the continuation part that belongs to page 35
+                extra_words = [
+                    w for w in extra_words
+                    if w.get("page_number") == page_number
+                ]
+                extra_ayah["words"] = extra_words
+
+                # Put this ayah at the beginning of the list
+                ayahs.append(extra_ayah)
+
+                # Initialize surah tracking with this surah (usually Surah 2)
+                surahs.append({
+                    "number": prev_item.id,
+                    "name": prev_item.name,
+                    "englishName": prev_item.englishname,
+                    "englishNameTranslation": prev_item.englishtranslation,
+                    "revelationType": prev_item.revelationcity,
+                    "numberOfAyahs": prev_item.numberofayats,
+                })
+                surah_ids.append(prev_item.id)
+                surahs_ayat_counter[prev_item.id] = 1
 
         for item in result:
             ayah = {
@@ -97,10 +193,33 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
             if words:
                 last_ayah = ayahs[-1] if ayahs else None
                 if edition.type == "narration" or edition.format == "audio":
-                    ayah_words = await get_words(item.id, item.numberinsurat, page_number, item.text, edition_identifier, last_ayah, is_narration=True)
+                    ayah_words = await get_words(
+                        item.id,
+                        item.numberinsurat,
+                        page_number,
+                        item.text,
+                        edition_identifier,
+                        last_ayah,
+                        is_narration=True,
+                    )
                 else:
-                    ayah_words = await get_words(item.id, item.numberinsurat, page_number, item.text, edition_identifier, last_ayah)
+                    ayah_words = await get_words(
+                        item.id,
+                        item.numberinsurat,
+                        page_number,
+                        item.text,
+                        edition_identifier,
+                        last_ayah,
+                    )
+
+                # IMPORTANT: keep only words that belong to this page
+                ayah_words = [
+                    w for w in ayah_words
+                    if w.get("page_number") == page_number
+                ]
+
                 ayah["words"] = ayah_words
+
 
             ayahs.append(ayah)
 
