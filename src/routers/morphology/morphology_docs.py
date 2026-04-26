@@ -85,6 +85,86 @@ getWordMorphologyResponse = {
 }
 
 # ============================================
+# NEW: GET AYAH MORPHOLOGY
+# ============================================
+
+getAyahMorphologyResponse = {
+    200: {
+        "description": "Returns morphological analysis for all words in a specific ayah",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 200,
+                    "status": "OK",
+                    "data": [
+                        {
+                            "word": {
+                                "id": 1,
+                                "location": "1:1:1",
+                                "text": "بِسْمِ",
+                                "surah": {
+                                    "id": 1,
+                                    "name": "الفاتحة",
+                                    "english_name": "Al-Fatihah"
+                                },
+                                "ayah_number": 1,
+                                "position": 1,
+                                "ayah_text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ"
+                            },
+                            "morphology": {
+                                "total_tags": 12,
+                                "tags_by_category": {
+                                    "Irab": [
+                                        {
+                                            "code": "جر",
+                                            "meaning": "في محل جر",
+                                            "user_meaning": "في محل جر",
+                                            "order": 7
+                                        }
+                                    ]
+                                },
+                                "all_tags": [
+                                    {
+                                        "code": "ب",
+                                        "meaning": "حرف الباء",
+                                        "category": "Lawahiq",
+                                        "order": 1
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    400: {
+        "description": "Invalid reference format",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 400,
+                    "status": "Error",
+                    "data": "Invalid reference format."
+                }
+            }
+        }
+    },
+    404: {
+        "description": "Ayah not found",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 404,
+                    "status": "Error",
+                    "data": "Ayah not found."
+                }
+            }
+        }
+    }
+}
+
+# ============================================
 # 2. SEARCH BY TAGS
 # ============================================
 

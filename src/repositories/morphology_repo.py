@@ -241,6 +241,147 @@ async def get_word_morphology_by_location(
 
 
 # ============================================
+# AYAH MORPHOLOGY LOOKUP
+# ============================================
+
+async def get_ayah_morphology(
+    surah_id: int,
+    ayah_number: int,
+    category: Optional[str] = None,
+    include_meaning: bool = True
+) -> List[Dict[str, Any]] | str:
+    """
+    Get complete morphological breakdown for all words in a specific ayah.
+    
+    Args:
+        surah_id: Surah number (1-114)
+        ayah_number: Ayah number within surah
+        category: Optional filter by tag category
+        include_meaning: Include tag meanings in response
+        
+    Returns:
+        List of dictionaries, each with word info and morphological tags
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            # Get all words for the ayah with their morphologies and related data
+            query = select(Word).options(
+                joinedload(Word.surat),
+                selectinload(Word.morphologies).joinedload(WordMorphology.tag)
+            ).filter(
+                Word.surat_id == surah_id,
+                Word.numberinsurat == ayah_number
+            ).order_by(Word.position)
+            
+            result = await session.execute(query)
+            words = result.unique().scalars().all()
+            
+            if not words:
+                return f"No words found for ayah {surah_id}:{ayah_number}"
+            
+            # Get ayah text (edition 78)
+            ayah_query = select(Ayat.text).filter(
+                Ayat.surat_id == surah_id,
+                Ayat.numberinsurat == ayah_number,
+                Ayat.edition_id == 78
+            )
+            ayah_result = await session.execute(ayah_query)
+            ayah_text = ayah_result.scalar_one_or_none()
+            
+            ayah_data = []
+            for word in words:
+                # Filter morphologies by category if specified
+                morphologies = word.morphologies
+                if category:
+                    morphologies = [m for m in morphologies if m.tag.category == category]
+                
+                # Group tags by category
+                tags_by_category = {}
+                all_tags = []
+                
+                for morph in sorted(morphologies, key=lambda m: m.tag_order or 0):
+                    tag_data = {
+                        "code": morph.tag.code,
+                        "category": morph.tag.category,
+                        "order": morph.tag_order
+                    }
+                    
+                    if include_meaning:
+                        tag_data["meaning"] = morph.tag.meaning
+                        if morph.tag.user_meaning:
+                            tag_data["user_meaning"] = morph.tag.user_meaning
+                    
+                    # Add to all_tags list
+                    all_tags.append(tag_data)
+                    
+                    # Group by category
+                    if morph.tag.category not in tags_by_category:
+                        tags_by_category[morph.tag.category] = []
+                    tags_by_category[morph.tag.category].append(tag_data)
+                
+                ayah_data.append({
+                    "word": {
+                        "id": word.id,
+                        "location": f"{surah_id}:{ayah_number}:{word.position}",
+                        "text": word.text,
+                        "surah": {
+                            "id": word.surat.id,
+                            "name": word.surat.name,
+                            "english_name": word.surat.englishname
+                        },
+                        "ayah_number": ayah_number,
+                        "position": word.position,
+                        "ayah_text": ayah_text
+                    },
+                    "morphology": {
+                        "total_tags": len(all_tags),
+                        "tags_by_category": tags_by_category,
+                        "all_tags": all_tags
+                    }
+                })
+            
+            return ayah_data
+            
+    except Exception as e:
+        logger.error(f"Error getting ayah morphology for {surah_id}:{ayah_number}: {str(e)}", exc_info=True)
+        return f"An error occurred while fetching ayah morphology: {str(e)}"
+
+
+async def get_ayah_morphology_by_id(
+    ayah_id: int,
+    category: Optional[str] = None,
+    include_meaning: bool = True
+) -> List[Dict[str, Any]] | str:
+    """
+    Get complete morphological breakdown for all words in a specific ayah by global ID.
+    
+    Args:
+        ayah_id: Global ayah number
+        category: Optional filter by tag category
+        include_meaning: Include tag meanings in response
+        
+    Returns:
+        List of dictionaries, each with word info and morphological tags
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            # Get surah and ayah number from global id
+            # We use first() to get any edition, as surah/numberinsurat are the same across editions
+            query = select(Ayat.surat_id, Ayat.numberinsurat).filter(Ayat.number == ayah_id).limit(1)
+            result = await session.execute(query)
+            row = result.first()
+            
+            if not row:
+                return f"Ayah not found with global ID {ayah_id}"
+            
+            return await get_ayah_morphology(row.surat_id, row.numberinsurat, category, include_meaning)
+            
+    except Exception as e:
+        logger.error(f"Error resolving ayah ID {ayah_id}: {str(e)}", exc_info=True)
+        return f"An error occurred while fetching ayah morphology: {str(e)}"
+
+
+# ============================================
 # SEARCH BY TAGS
 # ============================================
 

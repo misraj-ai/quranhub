@@ -189,7 +189,6 @@ async def get_all_hizbs(edition_identifier=DEFAULT_EDITION_IDENTIFIER):
 
         if not hizbs_info:
             return "No Hizbs found."
-
         edition_data = {
             "identifier": edition.identifier,
             "language": edition.language,

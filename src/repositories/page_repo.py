@@ -1,14 +1,16 @@
 from sqlalchemy.future import select
+from sqlalchemy import tuple_
 from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls
 from db.models import Ayat, Surat
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
 from repositories.hizb_repo import get_hizb_numbers
-from repositories.word_repo import get_words
+from repositories.word_repo import get_words, SPECIAL_NARRATION_PAGE_SPLITS
+from repositories.mushaf_layout_repo import get_layout_by_code, get_page_ayahs_and_lines
 from utils.logger import logger
 from db.session import AsyncSessionLocal
 from utils.config import DEFAULT_EDITION_IDENTIFIER
 
-async def get_page(page_number: int, edition_identifier: str, words: bool, limit: int, offset: int):
+async def get_page(page_number: int, edition_identifier: str, words: bool, limit: int, offset: int, tajweed: bool = False, tajweed_level: str = "basic", layout_code: str = None):
     try:
         edition = await get_edition_by_identifier(edition_identifier)
         if isinstance(edition, str):
@@ -38,8 +40,21 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
         if words and (edition.language != "ar" or edition.type == "tafsir"):
             return "Words are not available for this edition. Words are available only for Arabic editions and not Tafsir editions."
 
+        layout_id = None
+        line_map = None
+        layout_ayahs = None
+
+        if layout_code:
+            layout = await get_layout_by_code(layout_code)
+            if not layout:
+                return f"Layout with code '{layout_code}' not found."
+            layout_id = layout.layout_id
+            layout_ayahs, line_map = await get_page_ayahs_and_lines(layout_id, page_number)
+            if not layout_ayahs:
+                return f"No data found for layout '{layout_code}' page {page_number}."
+
         async with AsyncSessionLocal() as session:
-            result = await session.execute(
+            stmt = (
                 select(
                     Ayat.number,
                     Ayat.text,
@@ -58,116 +73,141 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                     Surat.numberofayats
                 )
                 .join(Surat, Ayat.surat_id == Surat.id)
-                .filter(Ayat.page_id == page_number, Ayat.edition_id == edition_id)
-                .order_by(Ayat.number)
-                .limit(limit)
-                .offset(offset)
+                .filter(Ayat.edition_id == edition_id)
             )
-            result = result.all()
+
+            if layout_ayahs is not None:
+                # Create a mapping for sorting: (surat_id, numberinsurat) -> index
+                order_map = {(s, a): i for i, (s, a) in enumerate(layout_ayahs)}
+                stmt = stmt.filter(tuple_(Ayat.surat_id, Ayat.numberinsurat).in_(layout_ayahs))
+                # Remove default ordering to ensure we can sort manually
+                stmt = stmt.order_by(None)
+                
+                res = await session.execute(stmt)
+                result = list(res.all())
+                # Sort in memory based on layout sequence
+                result.sort(key=lambda x: order_map.get((x.id, x.numberinsurat), 999))
+            else:
+                stmt = stmt.filter(Ayat.page_id == page_number)
+                # Ensure deterministic ayah ordering for page responses.
+                stmt = stmt.order_by(Ayat.number)
+                res = await session.execute(stmt.limit(limit).offset(offset))
+                result = res.all()
 
         if not result:
-            return "No ayahs found for this page and edition"
+            # No ayahs found for this page and edition — return empty list to indicate success with no items
+            return []
 
         ayahs = []
         surahs = []
         surah_ids = []
         surahs_ayat_counter = {}
-        # Special case: in quran-aldouri, ayah 2:219 is split between pages 34 and 35.
-        # For page 35 we need to also show the continuation of 2:219, but only its words
-        # that are marked with page_number == 35 by word_repo.
-        if words and edition_identifier == "quran-aldouri" and page_number == 35:
-            async with AsyncSessionLocal() as session2:
-                prev_res = await session2.execute(
-                    select(
-                        Ayat.number,
-                        Ayat.text,
-                        Ayat.numberinsurat,
-                        Ayat.juz_id,
-                        Ayat.manzil_id,
-                        Ayat.page_id,
-                        Ayat.ruku_id,
-                        Ayat.hizbquarter_id,
-                        Ayat.sajda_id,
-                        Surat.id,
-                        Surat.name,
-                        Surat.englishname,
-                        Surat.englishtranslation,
-                        Surat.revelationcity,
-                        Surat.numberofayats,
+        async with AsyncSessionLocal() as session2:
+             for (spec_edition_id, spec_surah, spec_ayah), is_split in SPECIAL_NARRATION_PAGE_SPLITS.items():
+                if spec_edition_id == edition_identifier:
+                    prev_res = await session2.execute(
+                        select(
+                            Ayat.number,
+                            Ayat.text,
+                            Ayat.numberinsurat,
+                            Ayat.juz_id,
+                            Ayat.manzil_id,
+                            Ayat.page_id,
+                            Ayat.ruku_id,
+                            Ayat.hizbquarter_id,
+                            Ayat.sajda_id,
+                            Surat.id,
+                            Surat.name,
+                            Surat.englishname,
+                            Surat.englishtranslation,
+                            Surat.revelationcity,
+                            Surat.numberofayats,
+                        )
+                        .join(Surat, Ayat.surat_id == Surat.id)
+                        .filter(
+                            Ayat.surat_id == spec_surah,
+                            Ayat.numberinsurat == spec_ayah,
+                            Ayat.edition_id == edition_id,
+                        )
                     )
-                    .join(Surat, Ayat.surat_id == Surat.id)
-                    .filter(
-                        Ayat.surat_id == 2,          # Surah al-Baqarah
-                        Ayat.numberinsurat == 219,   # Ayah 219
-                        Ayat.edition_id == edition_id,
-                    )
-                )
-                prev_item = prev_res.first()
+                    prev_item = prev_res.first()
 
-            if prev_item:
-                # Build an ayah object for 2:219, but mark page as 35
-                extra_ayah = {
-                    "number": prev_item.number,
-                    "text": prev_item.text,
-                    "surah": {
-                        "number": prev_item.id,
-                        "name": prev_item.name,
-                        "englishName": prev_item.englishname,
-                        "englishNameTranslation": prev_item.englishtranslation,
-                        "revelationType": prev_item.revelationcity,
-                        "numberOfAyahs": prev_item.numberofayats,
-                    },
-                    "numberInSurah": prev_item.numberinsurat,
-                    "juz": prev_item.juz_id,
-                    "manzil": prev_item.manzil_id,
-                    "page": page_number,  # override: this response is for page 35
-                    "ruku": prev_item.ruku_id,
-                    "hizbQuarter": prev_item.hizbquarter_id,
-                    "sajda": prev_item.sajda_id if prev_item.sajda_id else False,
-                }
+                    # Check if this special ayah is on the previous page
+                    if prev_item and prev_item.page_id == page_number - 1:
+                         # Build an ayah object but mark page as current page
+                        extra_ayah = {
+                            "number": prev_item.number,
+                            "text": prev_item.text,
+                            "surah": {
+                                "number": prev_item.id,
+                                "name": prev_item.name,
+                                "englishName": prev_item.englishname,
+                                "englishNameTranslation": prev_item.englishtranslation,
+                                "revelationType": prev_item.revelationcity,
+                                "numberOfAyahs": prev_item.numberofayats,
+                            },
+                            "numberInSurah": prev_item.numberinsurat,
+                            "juz": prev_item.juz_id,
+                            "manzil": prev_item.manzil_id,
+                            "page": page_number,  # override: this response is for current page
+                            "ruku": prev_item.ruku_id,
+                            "hizbQuarter": prev_item.hizbquarter_id,
+                            "sajda": prev_item.sajda_id if prev_item.sajda_id else False,
+                        }
 
-                # Get all words for 2:219 using its original page_id (34)
-                if edition.type == "narration" or edition.format == "audio":
-                    extra_words = await get_words(
-                        prev_item.id,
-                        prev_item.numberinsurat,
-                        prev_item.page_id,   # 34, so SPECIAL SPLIT in word_repo works
-                        prev_item.text,
-                        edition_identifier,
-                        last_ayah=None,
-                        is_narration=True,
-                    )
-                else:
-                    extra_words = await get_words(
-                        prev_item.id,
-                        prev_item.numberinsurat,
-                        prev_item.page_id,
-                        prev_item.text,
-                        edition_identifier,
-                        last_ayah=None,
-                    )
+                        # Get all words using its original page_id so split logic works
+                        if edition.type == "narration" or edition.format == "audio":
+                            extra_words = await get_words(
+                                prev_item.id,
+                                prev_item.numberinsurat,
+                                prev_item.page_id,
+                                prev_item.text,
+                                edition_identifier,
+                                last_ayah=None,
+                                is_narration=True,
+                                include_tajweed=tajweed,
+                                tajweed_level=tajweed_level,
+                                line_map=line_map
+                            )
+                        else:
+                            extra_words = await get_words(
+                                prev_item.id,
+                                prev_item.numberinsurat,
+                                prev_item.page_id,
+                                prev_item.text,
+                                edition_identifier,
+                                last_ayah=None,
+                                include_tajweed=tajweed,
+                                tajweed_level=tajweed_level,
+                                line_map=line_map
+                            )
 
-                # Keep only the continuation part that belongs to page 35
-                extra_words = [
-                    w for w in extra_words
-                    if w.get("page_number") == page_number
-                ]
-                extra_ayah["words"] = extra_words
+                        # Keep only the continuation part that belongs to this page
+                        extra_words = [
+                            w for w in extra_words
+                            if w.get("page_number") == page_number
+                        ]
 
-                # Put this ayah at the beginning of the list
-                ayahs.append(extra_ayah)
+                        if extra_words:
+                            extra_ayah["words"] = extra_words
+                            
+                            # Put this ayah at the beginning of the list
+                            ayahs.append(extra_ayah)
 
-                # Initialize surah tracking with this surah (usually Surah 2)
-                surahs.append({
-                    "number": prev_item.id,
-                    "name": prev_item.name,
-                    "englishName": prev_item.englishname,
-                    "englishNameTranslation": prev_item.englishtranslation,
-                    "revelationType": prev_item.revelationcity,
-                    "numberOfAyahs": prev_item.numberofayats,
-                })
-                surah_ids.append(prev_item.id)
-                surahs_ayat_counter[prev_item.id] = 1
+                            # Initialize surah tracking with this surah if not present
+                            if prev_item.id not in surah_ids:
+                                surahs.append({
+                                    "number": prev_item.id,
+                                    "name": prev_item.name,
+                                    "englishName": prev_item.englishname,
+                                    "englishNameTranslation": prev_item.englishtranslation,
+                                    "revelationType": prev_item.revelationcity,
+                                    "numberOfAyahs": prev_item.numberofayats,
+                                })
+                                surah_ids.append(prev_item.id)
+                                surahs_ayat_counter[prev_item.id] = 1
+                            else:
+                                surahs_ayat_counter[prev_item.id] += 1
 
         for item in result:
             ayah = {
@@ -201,6 +241,9 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                         edition_identifier,
                         last_ayah,
                         is_narration=True,
+                        include_tajweed=tajweed,
+                        tajweed_level=tajweed_level,
+                        line_map=line_map
                     )
                 else:
                     ayah_words = await get_words(
@@ -210,6 +253,9 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                         item.text,
                         edition_identifier,
                         last_ayah,
+                        include_tajweed=tajweed,
+                        tajweed_level=tajweed_level,
+                        line_map=line_map
                     )
 
                 # IMPORTANT: keep only words that belong to this page
@@ -246,6 +292,9 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                 item["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, verse_number)
                 item["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, verse_number)
 
+        # Always return ayahs ordered ascending by global ayah number.
+        ayahs.sort(key=lambda x: x["number"])
+
         edition_info = {
             "identifier": edition.identifier,
             "language": edition.language,
@@ -257,15 +306,17 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
         }
 
         hizb_numbers = await get_hizb_numbers(page_number, edition_id)
-        top_page_surah = max(surahs_ayat_counter, key=surahs_ayat_counter.get)
-        for surah in surahs:
-            if surah["number"] == top_page_surah:
-                top_page_surah = surah
-                break
+        max_juz_number = max((ayah.get("juz") for ayah in ayahs if ayah.get("juz") is not None), default=None)
+        top_page_surah_number = max(surahs_ayat_counter, key=surahs_ayat_counter.get)
+        top_page_surah = next(
+            (surah for surah in surahs if surah["number"] == top_page_surah_number),
+            {"number": top_page_surah_number}
+        )
 
         return {
             "number": page_number,
             "topPageSurah": top_page_surah,
+            "topPageJuz": max_juz_number,
             "hizbNumbers": hizb_numbers,
             "ayahs": ayahs,
             "surahs": surahs,
@@ -342,7 +393,8 @@ async def get_all_pages(edition_identifier=DEFAULT_EDITION_IDENTIFIER):
             pages_info = list(page_data_map.values())
 
         if not pages_info:
-            return "No Pages found."
+            # No pages found for this edition — return empty list
+            return []
 
         edition_data = {
             "identifier": edition.identifier,

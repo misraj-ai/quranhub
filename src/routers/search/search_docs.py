@@ -3,12 +3,12 @@
 
 getKeywordbySurahAndLanguageOrEditionResponse = {
     200: {
-        "description": "Returns ayahs (verses) matching a keyword in the Quran, with support for language detection, edition selection, exact/fuzzy matching, and Surah filtering. Each ayah result includes similarity metrics: 'similarity' (character-level), 'wordSimilarity' (word-level/phrase), and 'relevanceScore' (composite, 100-50 scale). Results are sorted by: relevanceScore DESC, wordSimilarity DESC, similarity DESC, ayah number ASC. Useful for LLMs, search UIs, and advanced workflows.",
+        "description": "Returns ayahs (verses) matching a keyword in the Quran, with support for language detection, edition selection, exact/fuzzy matching, and Surah filtering. For exact search, matching is strict whole-word or phrase matching (no partial-in-word matches). Arabic exact search also applies strict normalization cleanup with hamza-variant folding (for example: أ/إ/آ/ٱ -> ا, ؤ -> و, ئ -> ي). Fuzzy search keeps typo-tolerant normalization and similarity ranking. Each ayah result includes similarity metrics: 'similarity' (character-level), 'wordSimilarity' (word-level/phrase), and 'relevanceScore' (composite, 100-50 scale). Results are sorted by: relevanceScore DESC, wordSimilarity DESC, similarity DESC, ayah number ASC. Useful for LLMs, search UIs, and advanced workflows.",
         "content": {
             "application/json": {
                 "examples": {
                     "arabic_exact_search": {
-                        "summary": "Arabic Exact Search with Diacritics",
+                        "summary": "Arabic Exact Search (Strict Whole-Word/Phrase Matching)",
                         "value": {
                             "code": 200,
                             "status": "OK",
@@ -286,6 +286,7 @@ getKeywordbySurahAndLanguageOrEditionResponse = {
                             "data": "Nothing matching your search was found"
                         }
                     },
+
                     "invalid_edition": {
                         "summary": "Invalid Edition Identifier",
                         "value": {

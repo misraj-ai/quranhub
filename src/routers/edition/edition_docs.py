@@ -699,7 +699,8 @@ getTheAudioEditionByNarratorIdentifierResponse = {
                             "direction": "rtl",
                             "narratorIdentifier": "quran-warsh",
                             "imageUrl": "https://example.com/reciters/shaatree.jpg",
-                            "shortDescription": {"ar": "قارئ مشهور من السعودية برواية ورش"}
+                            "shortDescription": {"ar": "قارئ مشهور من السعودية برواية ورش"},
+                            "recitationType": "murattal"
                         },
                         {
                             "identifier": "ar.warsh.premium",
@@ -711,7 +712,8 @@ getTheAudioEditionByNarratorIdentifierResponse = {
                             "direction": "rtl",
                             "narratorIdentifier": "quran-warsh",
                             "imageUrl": "https://example.com/reciters/warsh.jpg",
-                            "shortDescription": {"ar": "تسجيل عالي الجودة برواية ورش عن نافع"}
+                            "shortDescription": {"ar": "تسجيل عالي الجودة برواية ورش عن نافع"},
+                            "recitationType": "murattal"
                         }
                     ]
                 }

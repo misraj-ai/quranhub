@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
 
@@ -43,10 +44,11 @@ edition_router = APIRouter()
 async def get_the_edition(
     format: str = Query(None, description="Specify a format. 'text' or 'audio'", example='text'),
     language: str = Query(None, min_length=2, max_length=2, description="A 2-digit language code", example="ar"),
-    type: str = Query(None, description="A valid type for edition", example="quran")
+    type: str = Query(None, description="A valid type for edition", example="quran"),
+    sortBy: Optional[str] = Query('ar', description="Sort by 'ar' (Arabic name) or 'en' (English name)", example='en')
 ):
     try:
-        data = await edition_repo.get_edition(language=language, type=type, format=format)
+        data = await edition_repo.get_edition(language=language, type=type, format=format, sort_by=sortBy)
         if isinstance(data, str):
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
@@ -556,9 +558,19 @@ async def get_edition_narrator_identifiers():
         }
     }
 )
-async def get_audio_edition_by_narrator_identifier(narratorIdentifier: str = Path(..., description="A valid narrator identifier for edition", example="quran-warsh")):
+async def get_audio_edition_by_narrator_identifier(
+    narratorIdentifier: str = Path(..., description="A valid narrator identifier for edition", example="quran-warsh"),
+    language: Optional[str] = Query(None, description="Filter by language code (e.g., 'ar', 'en', 'fa')", example="ar"),
+    sortBy: Optional[str] = Query('ar', description="Sort by 'ar' (Arabic name) or 'en' (English name)", example='en')
+):
     try:
-        data = await edition_repo.get_edition(format="audio", narrator=narratorIdentifier, type="versebyverse")
+        data = await edition_repo.get_edition(
+            format="audio", 
+            narrator=narratorIdentifier, 
+            type="versebyverse", 
+            language=language,
+            sort_by=sortBy
+        )
         if isinstance(data, str):
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},

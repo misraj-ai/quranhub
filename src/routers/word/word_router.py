@@ -11,6 +11,7 @@ from .word_docs import (
     get_word_image_response
 )
 from utils.logger import logger
+from utils.config import BASIC_TAJWEED_RULES
 
 
 LOCATION_DESC = "Location in the format surah:ayah:position"
@@ -32,40 +33,98 @@ word_router = APIRouter()
     }
 )
 async def get_word_tajweed(
-    location: str = Query(..., description=LOCATION_DESC, example="1:1:2")
+    location: str = Query(..., description=LOCATION_DESC, example="1:1:2"),
+    level: str = Query("basic", description="Tajweed rules level ('basic' or 'advanced'). 'basic' filters for common rules, 'advanced' returns all.", regex="^(basic|advanced)$")
 ):
     try:
-        surah, ayah, position = map(int, location.split(":"))
-        async with AsyncSessionLocal() as session:
-            result = await session.execute(
-                select(Word.tajweed).filter(
-                    Word.surat_id == surah,
-                    Word.numberinsurat == ayah,
-                    Word.position == position
+        parts = list(map(int, location.split(":")))
+        if len(parts) == 3:
+            surah, ayah, position = parts
+            async with AsyncSessionLocal() as session:
+                result = await session.execute(
+                    select(Word.tajweed).filter(
+                        Word.surat_id == surah,
+                        Word.numberinsurat == ayah,
+                        Word.position == position
+                    )
                 )
+                tajweed = result.scalar_one_or_none()
+                if tajweed is not None:
+                    # Filter tajweed rules
+                    if level == "basic" and tajweed and "rules" in tajweed:
+                        tajweed["rules"] = [
+                            rule for rule in tajweed["rules"]
+                            if rule.get("cls") in BASIC_TAJWEED_RULES
+                        ]
+
+                    response = JSONResponse(
+                        content={
+                            "code": 200,
+                            "status": "OK",
+                            "data": {
+                                "location": location,
+                                "tajweed": tajweed
+                            }
+                        },
+                        status_code=200
+                    )
+                    add_cache_headers(response, cache_tag=f"word:tajweed:{location}")
+                    return response
+                else:
+                    response = JSONResponse(
+                        content={"code": 404, "status": "Error", "data": f"Word not found for location {location}"},
+                        status_code=404
+                    )
+                    response.headers["Cache-Control"] = "no-store"
+                    return response
+        elif len(parts) == 2:
+            surah, ayah = parts
+            async with AsyncSessionLocal() as session:
+                result = await session.execute(
+                    select(Word.position, Word.tajweed).filter(
+                        Word.surat_id == surah,
+                        Word.numberinsurat == ayah
+                    ).order_by(Word.position)
+                )
+                rows = result.all()
+                if rows:
+                    words_tajweed = []
+                    for row in rows:
+                        t_data = row.tajweed
+                        if level == "basic" and t_data and "rules" in t_data:
+                            # Create a copy to avoid mutating if necessary (though here it's fresh from DB)
+                            t_data = t_data.copy()
+                            t_data["rules"] = [
+                                rule for rule in t_data["rules"]
+                                if rule.get("cls") in BASIC_TAJWEED_RULES
+                            ]
+                        words_tajweed.append({"position": row.position, "tajweed": t_data})
+                    
+                    response = JSONResponse(
+                        content={
+                            "code": 200,
+                            "status": "OK",
+                            "data": {
+                                "location": location,
+                                "words": words_tajweed
+                            }
+                        },
+                        status_code=200
+                    )
+                    add_cache_headers(response, cache_tag=f"word:tajweed:ayah:{location}")
+                    return response
+                else:
+                    response = JSONResponse(
+                        content={"code": 404, "status": "Error", "data": f"No words found for ayah {location}"},
+                        status_code=404
+                    )
+                    response.headers["Cache-Control"] = "no-store"
+                    return response
+        else:
+            return JSONResponse(
+                content={"code": 400, "status": "Error", "data": "Invalid location format. Expected surah:ayah or surah:ayah:position"},
+                status_code=400
             )
-            tajweed = result.scalar_one_or_none()
-            if tajweed is not None:
-                response = JSONResponse(
-                    content={
-                        "code": 200,
-                        "status": "OK",
-                        "data": {
-                            "location": location,
-                            "tajweed": tajweed
-                        }
-                    },
-                    status_code=200
-                )
-                add_cache_headers(response, cache_tag=f"word:tajweed:{location}")
-                return response
-            else:
-                response = JSONResponse(
-                    content={"code": 404, "status": "Error", "data": f"Word not found for location {location}"},
-                    status_code=404
-                )
-                response.headers["Cache-Control"] = "no-store"
-                return response
     except Exception as e:
         logger.error(f"Error in get_word_tajweed: {e}", exc_info=True)
         response = JSONResponse(

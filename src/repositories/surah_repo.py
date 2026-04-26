@@ -5,8 +5,11 @@ from db.models import Surat, Ayat
 from db.session import AsyncSessionLocal
 from utils.logger import logger
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
+from repositories.word_repo import get_words
 from utils.config import DEFAULT_EDITION_IDENTIFIER
 from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls, get_surah_audio_url, get_surah_audio_secondary_urls
+from utils.audio_duration_loader import get_audio_duration
+import asyncio
 
 async def get_all_surahs(order_by_revelation_order=False):
     try:
@@ -201,13 +204,25 @@ async def get_all_juzs_with_surahs():
 
 
 
-async def get_surah(surah_number, edition_identifier, limit, offset):
+async def get_surah(
+    surah_number: int,
+    edition_identifier: str,
+    limit: int = None,
+    offset: int = None,
+    include_timings: bool = False,
+    words: bool = False,
+):
     try:
         # Fetch the edition based on the provided identifier
         edition = await get_edition_by_identifier(edition_identifier)
         if isinstance(edition, str):  # Error occurred while fetching edition
             return edition
 
+        timing_bitrate = 0 # Initialize bitrate for timing calculation
+        words_source_edition = None
+        words_edition_identifier = None
+        words_is_narration = False
+        
         # If edition is a list, we use the default edition for text
         if isinstance(edition, list):
             # For audio editions list, get text edition using narrator_identifier
@@ -220,20 +235,34 @@ async def get_surah(surah_number, edition_identifier, limit, offset):
             if isinstance(text_edition, str):
                 return text_edition
             edition_id = text_edition.id
+            words_source_edition = text_edition
+            words_edition_identifier = text_edition.identifier
+            words_is_narration = any(e.type == "narration" or e.format == "audio" for e in edition)
         else:
             edition_id = edition.id
+            words_is_narration = edition.type == "narration" or edition.format == "audio"
             # If the edition is audio, get text edition for the same narrator
             if edition.format == "audio" and edition.narrator_identifier:
                 text_edition = await get_text_edition_for_narrator(edition.narrator_identifier)
                 if isinstance(text_edition, str):
                     return text_edition
                 edition_id = text_edition.id
+                words_source_edition = text_edition
+                words_edition_identifier = text_edition.identifier
             elif edition.format == "audio":
                 # Fallback to default if no narrator_identifier
                 text_edition = await get_edition_by_identifier(DEFAULT_EDITION_IDENTIFIER)
                 if isinstance(text_edition, str):
                     return text_edition
                 edition_id = text_edition.id
+                words_source_edition = text_edition
+                words_edition_identifier = text_edition.identifier
+            else:
+                words_source_edition = edition
+                words_edition_identifier = edition.identifier
+
+        if words and (words_source_edition.language != "ar" or words_source_edition.type == "tafsir"):
+            return "Words are not available for this edition. Words are available only for Arabic editions and not Tafsir editions."
 
         # Query Surah metadata
         async with AsyncSessionLocal() as session:
@@ -270,7 +299,7 @@ async def get_surah(surah_number, edition_identifier, limit, offset):
             )
             ayahs = []
             for item in result.fetchall():
-                ayahs.append({
+                ayah = {
                     "number": item.number,
                     "text": item.text,
                     "numberInSurah": item.numberinsurat,
@@ -280,7 +309,21 @@ async def get_surah(surah_number, edition_identifier, limit, offset):
                     "ruku": item.ruku_id,
                     "hizbQuarter": item.hizbquarter_id,
                     "sajda": item.sajda_id if item.sajda_id else False
-                })
+                }
+
+                if words:
+                    last_ayah = ayahs[-1] if ayahs else None
+                    ayah["words"] = await get_words(
+                        surah_number,
+                        item.numberinsurat,
+                        item.page_id,
+                        item.text,
+                        words_edition_identifier,
+                        last_ayah,
+                        is_narration=words_is_narration,
+                    )
+
+                ayahs.append(ayah)
 
         # Audio URLs for Surah and Ayahs
         surah_audio_url = ""
@@ -295,12 +338,14 @@ async def get_surah(surah_number, edition_identifier, limit, offset):
                     for ayah in ayahs:
                         ayah["audio"] =  get_ayah_audio_url(max_bitrate, item.identifier, ayah["number"])
                         ayah["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, item.identifier, ayah["number"])
+                    timing_bitrate = max_bitrate # Store bitrate for timing calculation
                 elif item.type == "surah":
                     bitrates = item.bitrates
                     max_bitrate = max(bitrates)
                     remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
                     surah_audio_url = get_surah_audio_url(max_bitrate, item.identifier, surah_number)
                     surah_audio_secondary_urls = get_surah_audio_secondary_urls(remaining_bitrates, item.identifier, surah_number)
+                    
             edition = edition[0]  # Use the first edition for other details
         else:
             if edition.format == "audio":
@@ -311,12 +356,14 @@ async def get_surah(surah_number, edition_identifier, limit, offset):
                     for ayah in ayahs:
                         ayah["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, ayah["number"])
                         ayah["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, ayah["number"])
+                    timing_bitrate = max_bitrate # Store bitrate for timing calculation
                 elif edition.type == "surah":
                     bitrates = edition.bitrates
                     max_bitrate = max(bitrates)
                     remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
                     surah_audio_url = get_surah_audio_url(max_bitrate, edition.identifier, surah_number)
                     surah_audio_secondary_urls = get_surah_audio_secondary_urls(remaining_bitrates, edition.identifier, surah_number)
+                    
 
         edition_data = {
             "identifier": edition.identifier,
@@ -328,7 +375,7 @@ async def get_surah(surah_number, edition_identifier, limit, offset):
             "direction": edition.direction
         }
 
-        return {
+        result_data = {
             "number": surah_meta.id,
             "name": surah_meta.name,
             "audio": surah_audio_url,
@@ -341,11 +388,41 @@ async def get_surah(surah_number, edition_identifier, limit, offset):
             "edition": edition_data
         }
 
+        # Process audio timings if requested and audio URLs are available for verse-by-verse
+        # Timings are only available for Hafs editions with pre-calculated durations
+        if include_timings and ayahs and "audio" in ayahs[0]:
+            current_edition = edition if not isinstance(edition, list) else edition[0]
+            narrator = getattr(current_edition, 'narrator_identifier', '')
+
+            # Only process timings for Hafs editions
+            if narrator.endswith('-hafs'):
+                current_time_ms = 0
+                edition_id = current_edition.identifier
+
+                # Use pre-calculated durations
+                logger.debug(f"Using pre-calculated durations for {edition_id}")
+                for i, ayah in enumerate(ayahs):
+                    duration_ms = get_audio_duration(edition_id, surah_number, ayah["number"])
+
+                    if duration_ms is not None:
+                        ayahs[i]["timings"] = {
+                            "startTimeMs": current_time_ms,
+                            "endTimeMs": current_time_ms + duration_ms,
+                            "durationMs": duration_ms
+                        }
+                        current_time_ms += duration_ms
+                    else:
+                        logger.warning(f"Missing duration for {edition_id}:{surah_number}:{ayah['number']}")
+            else:
+                logger.info(f"Timings not available for non-Hafs edition: {current_edition.identifier}")
+            
+        return result_data
+
     except Exception as e:
         logger.error("An exception occurred: %s", str(e))
         return "An error occurred while fetching the Surah data."
 
-async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limit, offset):
+async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limit, offset, words: bool = False):
     try:
         editions = []
         for edition_identifier in edition_identifiers:
@@ -362,6 +439,7 @@ async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limi
 
         results = []
         data = []
+        words_contexts = []
 
         # Query Surah metadata asynchronously
         async with AsyncSessionLocal() as session:
@@ -382,6 +460,10 @@ async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limi
             # For each edition, get the Ayahs and process audio URLs
             for item in editions:
                 edition_id = item.id
+                words_source_edition = item
+                words_edition_identifier = item.identifier
+                words_is_narration = item.type == "narration" or item.format == "audio"
+
                 if item.format == "audio":
                     # Get text edition for the same narrator_identifier
                     if item.narrator_identifier:
@@ -392,6 +474,21 @@ async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limi
                     if isinstance(text_edition, str):
                         return text_edition
                     edition_id = text_edition.id
+                    words_source_edition = text_edition
+                    words_edition_identifier = text_edition.identifier
+
+                if words and (words_source_edition.language != "ar" or words_source_edition.type == "tafsir"):
+                    return (
+                        f"Words are not available for edition '{item.identifier}'. "
+                        "Words are available only for Arabic editions and not Tafsir editions."
+                    )
+
+                words_contexts.append(
+                    {
+                        "edition_identifier": words_edition_identifier,
+                        "is_narration": words_is_narration,
+                    }
+                )
 
                 result = await session.execute(
                     select(
@@ -429,6 +526,19 @@ async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limi
                     "hizbQuarter": results[i][j].hizbquarter_id,
                     "sajda": results[i][j].sajda_id if results[i][j].sajda_id else False
                 }
+
+                if words:
+                    last_ayah = ayahs[-1] if ayahs else None
+                    ayah["words"] = await get_words(
+                        surah_number,
+                        results[i][j].numberinsurat,
+                        results[i][j].page_id,
+                        results[i][j].text,
+                        words_contexts[i]["edition_identifier"],
+                        last_ayah,
+                        is_narration=words_contexts[i]["is_narration"],
+                    )
+
                 ayahs.append(ayah)
 
             # If edition format is audio, add audio URLs for the Ayahs
@@ -449,9 +559,10 @@ async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limi
                 "type": editions[i].type,
                 "direction": editions[i].direction
             }
-
+            
+            
             # Add the final data for the edition
-            data.append({
+            edition_result = {
                 "number": surah_meta.id,
                 "name": surah_meta.name,
                 "englishName": surah_meta.englishname,
@@ -460,7 +571,10 @@ async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limi
                 "numberOfAyahs": surah_meta.numberofayats,
                 "ayahs": ayahs,
                 "edition": edition_data
-            })
+            }
+            
+                
+            data.append(edition_result)
 
         return data
 

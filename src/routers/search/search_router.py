@@ -37,7 +37,7 @@ async def search_quran_by_keyword(
     language: str = Query(None, description="Language code like 'en', 'ar', etc."),
     editionIdentifier: str = Query(None, description="Edition identifier like 'en.sahih', 'quran-simple-clean', etc."),
     surahNumber: int = Query(None, description="Surah number (1-114)", ge=1, le=114),
-    exactSearch: bool = Query(True, description="Exact search match required or not", example=True),
+    exactSearch: bool = Query(True, description="Use strict exact whole-word/phrase matching; Arabic exact folds hamza variants", example=True),
     limit: int = Query(10, description="Number of ayahs to limit the response to.", example=10, le=20),
     offset: int = Query(0, description="Offset ayahs by the given number.", example=0, ge=0)
 ):
@@ -47,7 +47,7 @@ async def search_quran_by_keyword(
     Features:
     - Automatic language detection (Arabic vs English)
     - Arabic text normalization (removes diacritics)
-    - Exact search: Uses LIKE for substring matching
+    - Exact search: Strict whole-word/phrase matching (no partial-in-word matches), with Arabic hamza-variant folding
     - Fuzzy search: Uses pg_trgm for similarity matching
     - Multi-word support in fuzzy search
     - Returns verses from specified edition or default editions

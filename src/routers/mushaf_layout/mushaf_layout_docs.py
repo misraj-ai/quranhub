@@ -30,7 +30,7 @@ getMushafLayoutsResponse = {
                     },
                     "empty": {
                         "summary": "No layouts found (404)",
-                        "value": {"code": 404, "status": "Not Found", "data": {"total": 0, "items": []}},
+                        "value": {"code": 404, "status": "Not Found", "data": "No layouts found."},
                         "status": 404
                     }
                 }
@@ -154,6 +154,7 @@ getMushafLayoutLookupResponse = {
                         "value": {"code": 404, "status": "Not Found", "data": "No lines found for lookup."},
                         "status": 404
                     },
+
                     "bad_request": {
                         "summary": "Range too large (400)",
                         "value": {"code": 400, "status": "Bad Request", "data": "The difference between toWord and fromWord must not be greater than 20."},

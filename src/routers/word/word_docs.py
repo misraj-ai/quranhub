@@ -5,19 +5,44 @@ Word API Documentation (OpenAPI response examples)
 
 get_word_tajweed_response = {
     200: {
-        "description": "Returns the tajweed rules for a specific word in the Quran, identified by its location (surah:ayah:position). Use this to analyze or display tajweed for a word in context.",
+        "description": "Returns the tajweed rules for a specific word (surah:ayah:position) or all words in an ayah (surah:ayah). Use this to analyze or display tajweed for a word or entire ayah.",
         "content": {
             "application/json": {
-                "example": {
-                    "code": 200,
-                    "status": "OK",
-                    "data": {
-                        "location": "1:1:2",
-                        "tajweed": {
-                            "text": "ٱللَّهِ",
-                            "rules": [
-                                {"cls": "ham_wasl", "len": 1, "span": "ٱ", "offset": 1}
-                            ]
+                "examples": {
+                    "word_format": {
+                        "summary": "Specific Word (surah:ayah:position)",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": {
+                                "location": "1:1:2",
+                                "tajweed": {
+                                    "text": "ٱللَّهِ",
+                                    "rules": [
+                                        {"cls": "ham_wasl", "len": 1, "span": "ٱ", "offset": 1}
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "ayah_format": {
+                        "summary": "Entire Ayah (surah:ayah)",
+                        "value": {
+                            "code": 200,
+                            "status": "OK",
+                            "data": {
+                                "location": "1:1",
+                                "words": [
+                                    {
+                                        "position": 1,
+                                        "tajweed": {"text": "بِسۡمِ", "rules": []}
+                                    },
+                                    {
+                                        "position": 2,
+                                        "tajweed": {"text": "ٱللَّهِ", "rules": [{"cls": "ham_wasl", "len": 1, "span": "ٱ", "offset": 1}]}
+                                    }
+                                ]
+                            }
                         }
                     }
                 }

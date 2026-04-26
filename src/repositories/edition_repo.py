@@ -1,7 +1,8 @@
 
 # Canonical: Get tafsir edition by identifier (matches get_distinct_audio_edition_by_identifier pattern)
-from sqlalchemy import select
+from sqlalchemy import select, case
 from sqlalchemy.exc import SQLAlchemyError
+from typing import Optional
 from db.session import AsyncSessionLocal
 from db.models import Edition  # Assuming Edition is in a models module
 from utils.logger import logger  # Assuming you have a logger module
@@ -131,10 +132,15 @@ async def get_distinct_audio_edition_by_identifier(edition_identifier: str):
             "format": edition.format,
             "direction": edition.direction,
             "narratorIdentifier": edition.narrator_identifier,
+            "recitationType": _get_recitation_type(getattr(edition, 'englishname', None)),
         }
     except Exception as e:
         logger.error(f"An exception occurred in get_distinct_audio_edition_by_identifier: {str(e)}")
         return "not_found"
+
+def _get_recitation_type(englishname: str | None) -> str:
+    """Detect recitation type from englishName. Returns 'mujawwad' or 'murattal'."""
+    return "mujawwad" if "mujawwad" in (englishname or "").lower() else "murattal"
 
 def _format_audio_edition(item):
     """Format a single audio edition item."""
@@ -150,6 +156,7 @@ def _format_audio_edition(item):
         "type": item.type,
         "direction": item.direction,
         "narratorIdentifier": item.narrator_identifier,
+        "recitationType": _get_recitation_type(item.englishname),
     }
 
 def _format_default_edition(item):
@@ -195,7 +202,7 @@ def _format_tafsir_edition(item):
     }
 
 
-async def get_edition(language=None, type=None, format=None, narrator=None):
+async def get_edition(language=None, type=None, format=None, narrator=None, sort_by: Optional[str] = None):
     try:
         async with AsyncSessionLocal() as session:
             query = select(Edition).options(
@@ -211,6 +218,17 @@ async def get_edition(language=None, type=None, format=None, narrator=None):
                 query = query.filter(Edition.format == format)
             if narrator:
                 query = query.filter(Edition.narrator_identifier == narrator)
+
+            # Determine sorting field
+            sort_field = Edition.name
+            if sort_by == 'en':
+                sort_field = Edition.englishname
+
+            # Add sorting: Arabic narrators first, then alphabetically by name/englishName
+            query = query.order_by(
+                case((Edition.language == 'ar', 0), else_=1),
+                sort_field
+            )
 
             result = await session.execute(query)
             result = result.scalars().all()

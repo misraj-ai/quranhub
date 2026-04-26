@@ -23,7 +23,8 @@ from .morphology_docs import (
     getSurahProfileResponse,
     searchByPatternResponse,
     compareWordsResponse,
-    getAllCategoriesResponse  
+    getAllCategoriesResponse,
+    getAyahMorphologyResponse
 )
 from enum import Enum
 
@@ -237,6 +238,119 @@ async def get_word_morphology(
         
     except Exception as e:
         logger.error(f"Unexpected error in get_word_morphology: {str(e)}", exc_info=True)
+        response = JSONResponse(
+            content={"code": 500, "status": "Error", "data": "Something went wrong"},
+            status_code=500
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+
+# ============================================
+# 1.5 GET AYAH MORPHOLOGY BY REFERENCE
+# ============================================
+
+@morphology_router.get(
+    "/ayah/{reference}",
+    responses=getAyahMorphologyResponse,
+    tags=["Morphology"],
+    name="Get Ayah Morphological Analysis",
+    description="Get complete morphological breakdown for all words in a specific ayah by its reference (surah:ayah or global number).",
+    openapi_extra={
+        "x-agent-hints": "Use this to analyze the morphological structure of an entire ayah. Reference format: 'surah:ayah' (e.g., '1:1') or global number (e.g., '1').",
+        "x-mcp-example": {
+            "reference": "1:1",
+            "category": "Irab",
+            "include_meaning": True
+        }
+    }
+)
+async def get_ayah_morphology(
+    reference: str = Path(..., description="Ayah reference (surah:ayah or global number)", example="1:1"),
+    category: Optional[MorphologyCategory] = Query(
+        None,
+        description="Filter tags by category",
+        example="Irab"
+    ),
+    include_meaning: bool = Query(
+        True,
+        description="Include tag meanings in response",
+        example=True
+    )
+):
+    """
+    Get morphological analysis for all words in an ayah.
+    
+    Reference can be:
+    - surah:ayah (e.g., 1:1)
+    - global ayah number (e.g., 1)
+    """
+    try:
+        logger.info(f"Ayah morphology request: reference={reference}, category={category}")
+        
+        if ":" in reference:
+            parts = reference.split(":")
+            if len(parts) != 2:
+                response = JSONResponse(
+                    content={"code": 400, "status": "Error", "data": "Invalid reference format. Use 'surah:ayah'"},
+                    status_code=400
+                )
+                response.headers["Cache-Control"] = "no-store"
+                return response
+            
+            try:
+                surah_id, ayah_number = map(int, parts)
+                data = await morphology_repo.get_ayah_morphology(
+                    surah_id=surah_id,
+                    ayah_number=ayah_number,
+                    category=category,
+                    include_meaning=include_meaning
+                )
+            except ValueError:
+                response = JSONResponse(
+                    content={"code": 400, "status": "Error", "data": "Reference parts must be numeric"},
+                    status_code=400
+                )
+                response.headers["Cache-Control"] = "no-store"
+                return response
+        elif reference.isdigit():
+            data = await morphology_repo.get_ayah_morphology_by_id(
+                ayah_id=int(reference),
+                category=category,
+                include_meaning=include_meaning
+            )
+        else:
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": "Invalid reference format. Use 'surah:ayah' or global number"},
+                status_code=400
+            )
+            response.headers["Cache-Control"] = "no-store"
+            return response
+
+        # Handle error responses
+        if isinstance(data, str):
+            logger.error(f"Ayah morphology lookup failed: {data}")
+            status_code = 404 if "not found" in data.lower() else 400
+            response = JSONResponse(
+                content={"code": status_code, "status": "Error", "data": data},
+                status_code=status_code
+            )
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        
+        # Success response
+        response = JSONResponse(
+            content={"code": 200, "status": "OK", "data": data},
+            status_code=200
+        )
+        cache_tag = f"morphology:ayah:{reference}"
+        if category:
+            cache_tag += f":category:{category}"
+        add_cache_headers(response, cache_tag=sanitize_cache_tag(cache_tag))
+        return response
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in get_ayah_morphology: {str(e)}", exc_info=True)
         response = JSONResponse(
             content={"code": 500, "status": "Error", "data": "Something went wrong"},
             status_code=500

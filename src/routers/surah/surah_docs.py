@@ -86,7 +86,7 @@ getAllSurahResponse = {
 
 getOneSurahResponse = {
     200: {
-    "description": "Returns detailed information about a specific Surah (chapter), including all ayahs, metadata, structural divisions, and edition-specific formatting. The editionIdentifier (e.g., 'ar.abdulbasitmurattal.hafs') must be provided as a path parameter, not as a query parameter. Useful for retrieving the full text and structure of a chapter.",
+    "description": "Returns detailed information about a specific Surah (chapter), including all ayahs, metadata, structural divisions, and edition-specific formatting. The editionIdentifier (e.g., 'ar.abdulbasitmurattal.hafs') must be provided as a path parameter, not as a query parameter. Use query parameter words=true to include per-ayah word breakdowns (available for Arabic non-Tafsir editions). Useful for retrieving the full text and structure of a chapter.",
         "content": {
             "application/json": {
                 "examples": {
@@ -122,7 +122,27 @@ getOneSurahResponse = {
                                         "page": 1,
                                         "ruku": 1,
                                         "hizbQuarter": 1,
-                                        "sajda": False
+                                        "sajda": False,
+                                        "words": [
+                                            {
+                                                "text": "بِسْمِ",
+                                                "char_type_name": "word",
+                                                "position": 1,
+                                                "line_number": 1,
+                                                "verse_key": "1:1",
+                                                "location": "1:1:1",
+                                                "page_number": 1
+                                            },
+                                            {
+                                                "text": "١",
+                                                "char_type_name": "end",
+                                                "position": 5,
+                                                "line_number": 1,
+                                                "verse_key": "1:1",
+                                                "location": "1:1:5",
+                                                "page_number": 1
+                                            }
+                                        ]
                                     },
                                     {
                                         "number": 2,
@@ -358,7 +378,7 @@ getTheSurahResponse = getOneSurahResponse
 # GET /surah/{surahNumber}/{editionIdentifier} - Get Surah by Number and Edition
 getTheSurahbyEditionResponse = {
     200: {
-        "description": "Returns a specific Surah (chapter) from a particular edition (translation, script, or recitation), including all ayahs and edition metadata. Useful for retrieving a chapter in a specific format or language.",
+        "description": "Returns a specific Surah (chapter) from a particular edition (translation, script, or recitation), including all ayahs and edition metadata. Use query parameter words=true to include per-ayah word breakdowns (available for Arabic non-Tafsir editions). Useful for retrieving a chapter in a specific format or language.",
         "content": {
             "application/json": {
                 "example": {
@@ -429,7 +449,7 @@ getTheSurahbyEditionResponse = {
 # GET /surah/{surahNumber}/{editionIdentifiers} - Get Surah from Multiple Editions
 getTheSurahbyEditionsResponse = {
     200: {
-        "description": "Returns a Surah (chapter) from multiple editions (comma-separated) for comparison, including all ayahs and edition metadata. Useful for comparing translations, scripts, or recitations side by side.",
+        "description": "Returns a Surah (chapter) from multiple editions (comma-separated) for comparison, including all ayahs and edition metadata. Use query parameter words=true to include per-ayah word breakdowns; when enabled, all requested editions must support words (Arabic non-Tafsir). Useful for comparing translations, scripts, or recitations side by side.",
         "content": {
             "application/json": {
                 "example": {

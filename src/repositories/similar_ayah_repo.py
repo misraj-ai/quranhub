@@ -1,5 +1,6 @@
 
-from sqlalchemy import select
+from sqlalchemy import select, or_, exists, and_, case
+from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.models import QuranAyahMatch, QuranAyahMatchSpan, Ayat, Surat, Word
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
@@ -52,11 +53,63 @@ async def get_similar_ayahs_for_ayah(
     async with AsyncSessionLocal() as db:
         for hafs_ayah_number in hafs_ayah_numbers:
             # Get all matches for this source ayah, paginated
+            # Create alias for subquery
+            ForwardMatch = aliased(QuranAyahMatch)
+            # Create aliases for joining to Ayat table for sorting
+            MatchedAyah = aliased(Ayat)
+            SourceAyah = aliased(Ayat)
+
+            # Build the query with conditional reverse match inclusion
             q = (
                 select(QuranAyahMatch)
+                .outerjoin(
+                    MatchedAyah,
+                    and_(
+                        QuranAyahMatch.matched_surat_id == MatchedAyah.surat_id,
+                        QuranAyahMatch.matched_numberinsurat == MatchedAyah.numberinsurat,
+                        MatchedAyah.edition_id == target_edition_id
+                    )
+                )
+                .outerjoin(
+                    SourceAyah,
+                    and_(
+                        QuranAyahMatch.source_surat_id == SourceAyah.surat_id,
+                        QuranAyahMatch.source_numberinsurat == SourceAyah.numberinsurat,
+                        SourceAyah.edition_id == target_edition_id
+                    )
+                )
                 .where(
-                    QuranAyahMatch.source_surat_id == surah_number,
-                    QuranAyahMatch.source_numberinsurat == hafs_ayah_number
+                    or_(
+                        # Forward match: input ayah is the source (always include)
+                        and_(
+                            QuranAyahMatch.source_surat_id == surah_number,
+                            QuranAyahMatch.source_numberinsurat == hafs_ayah_number
+                        ),
+                        # Reverse match: input ayah is matched, but ONLY if no forward match exists
+                        and_(
+                            QuranAyahMatch.matched_surat_id == surah_number,
+                            QuranAyahMatch.matched_numberinsurat == hafs_ayah_number,
+                            ~exists(
+                                select(1).select_from(ForwardMatch).where(
+                                    and_(
+                                        ForwardMatch.source_surat_id == surah_number,
+                                        ForwardMatch.source_numberinsurat == hafs_ayah_number,
+                                        ForwardMatch.matched_surat_id == QuranAyahMatch.source_surat_id,
+                                        ForwardMatch.matched_numberinsurat == QuranAyahMatch.source_numberinsurat
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+                .order_by(
+                    # Sort by the "other" ayah number (the similar ayah, not the input ayah)
+                    # If forward match: sort by matched ayah number
+                    # If reverse match: sort by source ayah number
+                    case(
+                        (QuranAyahMatch.source_surat_id == surah_number, MatchedAyah.number),
+                        else_=SourceAyah.number
+                    )
                 )
                 .offset(offset)
                 .limit(limit)
@@ -67,10 +120,22 @@ async def get_similar_ayahs_for_ayah(
                 continue
 
             for match in matches:
-                # Get matched ayah (must exist in this edition)
+                # Determine which direction this match is in
+                is_forward = (match.source_surat_id == surah_number and
+                              match.source_numberinsurat == hafs_ayah_number)
+
+                # Extract the "other" ayah (the similar one)
+                if is_forward:
+                    other_surat_id = match.matched_surat_id
+                    other_numberinsurat = match.matched_numberinsurat
+                else:
+                    other_surat_id = match.source_surat_id
+                    other_numberinsurat = match.source_numberinsurat
+
+                # Get the other ayah (must exist in this edition)
                 ayah_q = select(Ayat).where(
-                    Ayat.surat_id == match.matched_surat_id,
-                    Ayat.numberinsurat == match.matched_numberinsurat,
+                    Ayat.surat_id == other_surat_id,
+                    Ayat.numberinsurat == other_numberinsurat,
                     Ayat.edition_id == target_edition_id
                 )
                 ayah_result = await db.execute(ayah_q)
@@ -78,7 +143,7 @@ async def get_similar_ayahs_for_ayah(
                 if not ayah:
                     continue
                 # Get surah
-                surah_q = select(Surat).where(Surat.id == match.matched_surat_id)
+                surah_q = select(Surat).where(Surat.id == other_surat_id)
                 surah_result = await db.execute(surah_q)
                 surah = surah_result.scalar_one_or_none()
                 # Get all spans for this match
@@ -93,9 +158,17 @@ async def get_similar_ayahs_for_ayah(
                 # For each span, get the matched text
                 span_objs = []
                 for span in spans:
+                    # Extract words from the "other" ayah's span position
+                    if is_forward:
+                        word_surat_id = span.matched_surat_id
+                        word_numberinsurat = span.matched_numberinsurat
+                    else:
+                        word_surat_id = span.source_surat_id
+                        word_numberinsurat = span.source_numberinsurat
+
                     word_q = select(Word).where(
-                        Word.surat_id == span.matched_surat_id,
-                        Word.numberinsurat == span.matched_numberinsurat,
+                        Word.surat_id == word_surat_id,
+                        Word.numberinsurat == word_numberinsurat,
                         Word.position >= span.start_pos,
                         Word.position <= span.end_pos
                     ).order_by(Word.position)
@@ -120,7 +193,7 @@ async def get_similar_ayahs_for_ayah(
                     "hizb": ayah.hizb_id,
                     "sajda": ayah.sajda_id,
                     "surah": {
-                        "id": surah.id if surah else match.matched_surat_id,
+                        "id": surah.id if surah else other_surat_id,
                         "name": surah.name if surah else None,
                         "englishName": surah.englishname if surah else None,
                         "englishTranslation": surah.englishtranslation if surah else None,

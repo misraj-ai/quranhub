@@ -29,6 +29,8 @@ from routers.ayah_theme.ayah_theme_router import ayah_theme_router
 from routers.font.font_router import font_router
 from routers.mushaf_layout.mushaf_layout_router import mushaf_layout_router
 from routers.morphology.morphology_router import morphology_router
+from contextlib import asynccontextmanager
+from utils.audio_duration_loader import load_audio_durations, get_audio_duration_stats
 
 
 tags_metadata = [
@@ -54,11 +56,30 @@ tags_metadata = [
     {"name": "Mushaf Layout", "description": "Mushaf layout metadata, page/line structure, and surah/word lookups for Quranic pages."},
     {"name": "Morphology", "description": "Morphological analysis and resources for Quranic words."}
 ]
-# Remove lifespan function and argument
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Load audio durations
+    logger.info("Application startup: Loading audio durations...")
+    success = load_audio_durations()
+    if success:
+        stats = get_audio_duration_stats()
+        logger.info(f"Audio durations loaded: {stats['totalDurations']} entries")
+    else:
+        logger.warning("Audio durations not loaded - will use fallback calculation")
+
+    yield
+
+    # Shutdown
+    logger.info("Application shutdown")
+
+
 app = FastAPI(
     title="Quran Hub API",
     description="Quran Hub API Documentation",
-    openapi_tags=tags_metadata
+    openapi_tags=tags_metadata,
+    lifespan=lifespan
 )
 # (Removed CacheMiddleware registration)
 @app.exception_handler(RequestValidationError)

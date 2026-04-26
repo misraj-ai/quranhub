@@ -147,7 +147,9 @@ async def get_surahs_by_juz():
 async def get_the_surah(
     surahNumber: int = Path(..., ge=1, le=114, description="Surah number (1-114)"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
-    offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0)
+    offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0),
+    words: bool = Query(False, description="Include word breakdowns for each ayah."),
+    includeTimings: bool = Query(False, description="If true, include audio timing information (start, end, duration) for each ayah.", example=False)
 ):
     try:
         if surahNumber < 1 or surahNumber > 114:
@@ -157,7 +159,14 @@ async def get_the_surah(
             )
             error_response.headers["Cache-Control"] = "no-store"
             return error_response
-        data = await surah_repo.get_surah(surahNumber, DEFAULT_EDITION_IDENTIFIER, limit, offset)
+        data = await surah_repo.get_surah(
+            surahNumber,
+            DEFAULT_EDITION_IDENTIFIER,
+            limit,
+            offset,
+            includeTimings,
+            words,
+        )
         if isinstance(data, str):
             error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
@@ -169,7 +178,12 @@ async def get_the_surah(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag=f"surah-{surahNumber},edition-{DEFAULT_EDITION_IDENTIFIER}")
+        add_cache_headers(
+            response,
+            cache_duration=2592000,
+            browser_cache=3600,
+            cache_tag=f"surah-{surahNumber},edition-{DEFAULT_EDITION_IDENTIFIER},words-{words},timings-{includeTimings}",
+        )
         return response
     except Exception as e:
         logger.exception("An exception occurred while fetching surah number %d: %s", surahNumber, str(e))
@@ -196,7 +210,9 @@ async def get_the_surah_by_edition(
     surahNumber: int = Path(..., ge=1, le=114, description="Surah number (1-114)"),
     editionIdentifier: str = Path(..., description="Edition identifier (e.g., 'ar.abdulbasitmurattal.hafs') as a required path parameter, not a query parameter.", example="quran-uthmani"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
-    offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0)
+    offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0),
+    words: bool = Query(False, description="Include word breakdowns for each ayah."),
+    includeTimings: bool = Query(False, description="If true, include audio timing information (start, end, duration) for each ayah.", example=False)
 ):
     try:
         if surahNumber < 1 or surahNumber > 114:
@@ -206,7 +222,14 @@ async def get_the_surah_by_edition(
             )
             error_response.headers["Cache-Control"] = "no-store"
             return error_response
-        data = await surah_repo.get_surah(surahNumber, editionIdentifier, limit, offset)
+        data = await surah_repo.get_surah(
+            surahNumber,
+            editionIdentifier,
+            limit,
+            offset,
+            includeTimings,
+            words,
+        )
         if isinstance(data, str):
             error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
@@ -218,7 +241,12 @@ async def get_the_surah_by_edition(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag=f"surah-{surahNumber},edition-{editionIdentifier}")
+        add_cache_headers(
+            response,
+            cache_duration=2592000,
+            browser_cache=3600,
+            cache_tag=f"surah-{surahNumber},edition-{editionIdentifier},words-{words},timings-{includeTimings}",
+        )
         return response
     except Exception as e:
         logger.exception("An exception occurred while fetching surah number %d and edition %s: %s", surahNumber, editionIdentifier, str(e))
@@ -245,7 +273,8 @@ async def get_the_surah_by_editions(
     surahNumber: int = Path(..., ge=1, le=114, description="Surah number (1-114)"),
     editionIdentifiers: str = Path(..., description="Comma-separated edition identifiers (e.g., 'quran-uthmani,en.sahih')", example="quran-uthmani,quran-simple-clean"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
-    offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0)
+    offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0),
+    words: bool = Query(False, description="Include word breakdowns for each ayah.")
 ):
     try:
         if surahNumber < 1 or surahNumber > 114:
@@ -256,7 +285,7 @@ async def get_the_surah_by_editions(
             error_response.headers["Cache-Control"] = "no-store"
             return error_response
         edition_list = editionIdentifiers.split(',')
-        data = await surah_repo.get_surah_by_multiple_editions(surahNumber, edition_list, limit, offset)
+        data = await surah_repo.get_surah_by_multiple_editions(surahNumber, edition_list, limit, offset, words)
         if isinstance(data, str):
             error_response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
@@ -268,7 +297,12 @@ async def get_the_surah_by_editions(
             content={"code": 200, "status": "OK", "data": data},
             status_code=200
         )
-        add_cache_headers(response, cache_duration=2592000, browser_cache=3600, cache_tag=f"surah-{surahNumber},editions-{editionIdentifiers}")
+        add_cache_headers(
+            response,
+            cache_duration=2592000,
+            browser_cache=3600,
+            cache_tag=f"surah-{surahNumber},editions-{editionIdentifiers},words-{words}",
+        )
         return response
     except Exception as e:
         logger.exception("An exception occurred while fetching surah number %d and editions %s: %s", surahNumber, editionIdentifiers, str(e))

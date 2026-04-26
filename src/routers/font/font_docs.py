@@ -38,7 +38,8 @@ getFontKindsResponse = {
                 }
             }
         }
-    }
+    },
+
 }
 
 # Canonical OpenAPI response for /formats endpoint (List all font formats)
@@ -69,7 +70,8 @@ getFontFormatsResponse = {
                 }
             }
         }
-    }
+    },
+
 }
 
 # Canonical OpenAPI response for /archives endpoint (List all font archive types)

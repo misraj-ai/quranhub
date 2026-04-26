@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, Path
 from fastapi.responses import JSONResponse
+from typing import Optional
 
 from repositories import page_repo  # Using the repository now
 from .page_docs import (
@@ -102,27 +103,37 @@ async def get_all_pages_metadata_by_edition(
     description="Get a specific Quran page (1-604) from the default edition, including all ayahs and metadata. Optionally include word breakdowns. Useful for page navigation, display, and LLM workflows.",
     openapi_extra={
         "x-agent-hints": "Use this endpoint to fetch a single Quran page by number for display, navigation, or LLM context.",
-        "x-mcp-example": {"pageNumber": 1, "words": False, "limit": 7, "offset": 0}
+        "x-mcp-example": {"pageNumber": 1, "words": False, "tajweed": False, "tajweedLevel": "basic", "limit": 7, "offset": 0}
     }
 )
 async def get_page_by_number(
-    pageNumber: int = Path(..., ge=1, le=604, description="Page number (1-604)"),
+    pageNumber: int = Path(..., ge=1, le=10000, description="Page number (1-604 for Hafs, variable for other layouts)"),
     words: bool = Query(False, description="Include word breakdowns for each ayah."),
+    tajweed: bool = Query(False, description="Include tajweed rules for each word (requires words=True)."),
+    tajweedLevel: str = Query("basic", description="Tajweed rules level ('basic' or 'advanced'). 'basic' filters for common rules, 'advanced' returns all. Use camelCase `tajweedLevel`.", regex="^(basic|advanced)$"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
-    offset: int = Query(None, description="Offset ayahs in a page by the given number.", example=0)
+    offset: int = Query(None, description="Offset ayahs in a page by the given number.", example=0),
+    layoutCode: Optional[str] = Query(None, description="Optional layout code (e.g. 'uthmani-15-lines'). When provided, page and line numbers are derived from this layout.")
 ):
     try:
-        # Validate pageNumber range
-        if pageNumber < 1 or pageNumber > 604:
+        # Validate pageNumber range (default Hafs is 604, others differ)
+        if not layoutCode and (pageNumber < 1 or pageNumber > 604):
             response = JSONResponse(
-                content={"code": 400, "status": "Error", "data": "Page number should be between 1 and 604"},
+                content={"code": 400, "status": "Error", "data": "Page number should be between 1 and 604 for the default layout."},
                 status_code=400
             )
             response.headers["Cache-Control"] = "no-store"
             return response
 
+        # Validate tajweed dependency
+        if tajweed and not words:
+            return JSONResponse(
+                content={"code": 400, "status": "Error", "data": "tajweed parameter requires words=True"},
+                status_code=400
+            )
+
         # Fetch page data
-        data = await page_repo.get_page(pageNumber, DEFAULT_EDITION_IDENTIFIER, words, limit, offset)
+        data = await page_repo.get_page(pageNumber, DEFAULT_EDITION_IDENTIFIER, words, limit, offset, tajweed, tajweedLevel, layout_code=layoutCode)
 
         # Check if data is an error message (string)
         if isinstance(data, str):
@@ -158,28 +169,38 @@ async def get_page_by_number(
     description="Get a specific Quran page (1-604) from a particular edition, including all ayahs and metadata. Optionally include word breakdowns. Useful for edition-specific navigation, display, and LLM workflows.",
     openapi_extra={
         "x-agent-hints": "Use this endpoint to fetch a Quran page by number and edition for display, navigation, or LLM context.",
-        "x-mcp-example": {"pageNumber": 1, "editionIdentifier": "quran-uthmani", "words": False, "limit": 7, "offset": 0}
+        "x-mcp-example": {"pageNumber": 1, "editionIdentifier": "quran-uthmani", "words": False, "tajweed": False, "tajweedLevel": "basic", "limit": 7, "offset": 0}
     }
 )
 async def get_page_by_edition(
-    pageNumber: int = Path(..., ge=1, le=604, description="Page number (1-604)"),
+    pageNumber: int = Path(..., ge=1, le=10000, description="Page number (1-604 for Hafs, variable for other layouts)"),
     editionIdentifier: str = Path(..., description="Edition identifier (e.g., 'quran-uthmani')", example="quran-uthmani"),
     words: bool = Query(False, description="Include word breakdowns for each ayah."),
+    tajweed: bool = Query(False, description="Include tajweed rules for each word (requires words=True)."),
+    tajweedLevel: str = Query("basic", description="Tajweed rules level ('basic' or 'advanced'). 'basic' filters for common rules, 'advanced' returns all. Use camelCase `tajweedLevel`.", regex="^(basic|advanced)$"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
-    offset: int = Query(None, description="Offset ayahs in a page by the given number.", example=0)
+    offset: int = Query(None, description="Offset ayahs in a page by the given number.", example=0),
+    layoutCode: Optional[str] = Query(None, description="Optional layout code (e.g. 'uthmani-15-lines'). When provided, page and line numbers are derived from this layout.")
 ):
     try:
-        # Validate pageNumber range
-        if pageNumber < 1 or pageNumber > 604:
+        # Validate pageNumber range (default Hafs is 604, others differ)
+        if not layoutCode and (pageNumber < 1 or pageNumber > 604):
             response = JSONResponse(
-                content={"code": 400, "status": "Error", "data": "Page number should be between 1 and 604"},
+                content={"code": 400, "status": "Error", "data": "Page number should be between 1 and 604 for the default layout."},
                 status_code=400
             )
             response.headers["Cache-Control"] = "no-store"
             return response
 
+        # Validate tajweed dependency
+        if tajweed and not words:
+            return JSONResponse(
+                content={"code": 400, "status": "Error", "data": "tajweed parameter requires words=True"},
+                status_code=400
+            )
+
         # Fetch page data from the specified edition
-        data = await page_repo.get_page(pageNumber, editionIdentifier, words, limit, offset)
+        data = await page_repo.get_page(pageNumber, editionIdentifier, words, limit, offset, tajweed, tajweedLevel, layout_code=layoutCode)
 
         # Check if data is an error message (string)
         if isinstance(data, str):

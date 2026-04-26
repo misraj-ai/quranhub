@@ -138,6 +138,15 @@ getPagebyNumberResponse = {
                     "status": "OK",
                     "data": {
                         "number": 1,
+                        "topPageSurah": {
+                            "number": 1,
+                            "name": "سورة الفاتحة",
+                            "englishName": "Al-Faatiha",
+                            "englishNameTranslation": "The Opening",
+                            "revelationType": "Meccan",
+                            "numberOfAyahs": 7
+                        },
+                        "topPageJuz": 1,
                         "hizbNumbers": [1],
                         "ayahs": [
                             {
@@ -326,6 +335,15 @@ getPagebyEditionResponse = {
                             "status": "OK",
                             "data": {
                                 "number": 2,
+                                "topPageSurah": {
+                                    "number": 2,
+                                    "name": "سورة البقرة",
+                                    "englishName": "Al-Baqarah",
+                                    "englishNameTranslation": "The Cow",
+                                    "revelationType": "Medinan",
+                                    "numberOfAyahs": 286
+                                },
+                                "topPageJuz": 1,
                                 "hizbNumbers": [1],
                                 "ayahs": [
                                     {
@@ -396,6 +414,15 @@ getPagebyEditionResponse = {
                             "status": "OK",
                             "data": {
                                 "number": 1,
+                                "topPageSurah": {
+                                    "number": 1,
+                                    "name": "سورة الفاتحة",
+                                    "englishName": "Al-Faatiha",
+                                    "englishNameTranslation": "The Opening",
+                                    "revelationType": "Meccan",
+                                    "numberOfAyahs": 7
+                                },
+                                "topPageJuz": 1,
                                 "hizbNumbers": [1],
                                 "ayahs": [
                                     {
@@ -466,6 +493,15 @@ getPagebyEditionResponse = {
                             "status": "OK",
                             "data": {
                                 "number": 1,
+                                "topPageSurah": {
+                                    "number": 1,
+                                    "name": "سورة الفاتحة",
+                                    "englishName": "Al-Faatiha",
+                                    "englishNameTranslation": "The Opening",
+                                    "revelationType": "Meccan",
+                                    "numberOfAyahs": 7
+                                },
+                                "topPageJuz": 1,
                                 "hizbNumbers": [1],
                                 "ayahs": [
                                     {
@@ -497,7 +533,8 @@ getPagebyEditionResponse = {
                                                 },
                                                 "transliteration": {
                                                     "en": "bis'mi"
-                                                }
+                                                },
+                                                "tajweed": {"text": "بِسۡمِ", "rules": []}
                                             },
                                             {
                                                 "text": "ٱللَّهِ",
@@ -509,7 +546,8 @@ getPagebyEditionResponse = {
                                                 },
                                                 "transliteration": {
                                                     "en": "l-lahi"
-                                                }
+                                                },
+                                                "tajweed": {"text": "ٱللَّهِ", "rules": [{"cls": "ham_wasl", "len": 1, "span": "ٱ", "offset": 1}]}
                                             },
                                             {
                                                 "text": "ٱلرَّحْمَٰنِ",
@@ -521,7 +559,8 @@ getPagebyEditionResponse = {
                                                 },
                                                 "transliteration": {
                                                     "en": "r-raḥmāni"
-                                                }
+                                                },
+                                                "tajweed": {"text": "ٱلرَّحۡمَٰنِ", "rules": [{"cls": "ham_wasl", "len": 1, "span": "ٱ", "offset": 1}, {"cls": "tafkheem", "len": 1, "span": "ر", "offset": 3}, {"cls": "madda_normal", "len": 1, "span": "ٰ", "offset": 10}]}
                                             },
                                             {
                                                 "text": "ٱلرَّحِيمِ",
@@ -533,7 +572,8 @@ getPagebyEditionResponse = {
                                                 },
                                                 "transliteration": {
                                                     "en": "r-raḥīmi"
-                                                }
+                                                },
+                                                "tajweed": {"text": "ٱلرَّحِيمِ", "rules": [{"cls": "ham_wasl", "len": 1, "span": "ٱ", "offset": 1}, {"cls": "tafkheem", "len": 1, "span": "ر", "offset": 3}, {"cls": "madda_permissible", "len": 1, "span": "ي", "offset": 8}]}
                                             }
                                         ]
                                     }

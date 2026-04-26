@@ -83,7 +83,7 @@ async def get_narrations_differences(page_number: int, source_edition_identifier
             return "Please provide narration editions only."
 
         source_edition_id = source_edition.id
-        hafs_edition_id = (await get_edition_by_identifier("quran-simple")).id
+        hafs_edition_id = (await get_edition_by_identifier("quran-simple-clean")).id
         
         for edition_identifier in edition_identifiers:
             result = await get_edition_by_identifier(edition_identifier)
@@ -115,7 +115,9 @@ async def get_narrations_differences(page_number: int, source_edition_identifier
                     verse_surat_id, verse_numberinsurat, source_edition_identifier
                 )
                 
-                ayah_text = []
+                ayah_text_parts = []
+                hafs_segments_info = []
+
                 for verse_number in ayah_numbers_in_hafs:
                     ayah_part = await session.execute(
                         select(Ayat.text).filter(
@@ -124,11 +126,22 @@ async def get_narrations_differences(page_number: int, source_edition_identifier
                             Ayat.edition_id == hafs_edition_id
                         )
                     )
-                    ayah_part = ayah_part.scalars().first()
-                    ayah_text.append(ayah_part.strip())
+                    raw_text = ayah_part.scalars().first().strip()
+                    
+                    # Calculate segment length for location correction
+                    seg_text = raw_text.translate(QURANIC_SYMBOLS_TRANSLATION_TABLE)
+                    seg_text = strip_tashkeel(strip_diacritics(seg_text))
+                    seg_text = remove_extra_spaces(seg_text)
+                    
+                    # Store cleaned text for joining
+                    ayah_text_parts.append(seg_text)
+                    
+                    hafs_segments_info.append({
+                        "verse_number": verse_number,
+                        "length": len(seg_text.split())
+                    })
 
-                ayah_text = " ".join(ayah_text)
-                ayah_text = ayah_text.translate(QURANIC_SYMBOLS_TRANSLATION_TABLE)
+                ayah_text = " ".join(ayah_text_parts)
 
                 is_splitted_ayah = False
                 if len(ayah_numbers_in_target_edition) > 1:
@@ -185,8 +198,8 @@ async def get_narrations_differences(page_number: int, source_edition_identifier
                                 if '-' in difference_text:
                                     difference_dict["words"] = []
                                 else:
-                                    ayah_text = strip_tashkeel(strip_diacritics(ayah_text.strip()))
-                                    ayah_text = remove_extra_spaces(ayah_text)
+                                    # ayah_text is already cleaned during joining
+                                    ayah_text = remove_extra_spaces(ayah_text.strip())
                                     difference_text_indices = find_indices(ayah_text, difference_text)
 
                                     if difference_text_indices:
@@ -194,13 +207,40 @@ async def get_narrations_differences(page_number: int, source_edition_identifier
                                         verse_number_in_surah = verse_numberinsurat
                                         for element in difference_text_indices:
                                             word_position = element['index'] + 1
-                                            if is_splitted_ayah:
+                                            
+                                            final_verse_number = verse_number_in_surah
+                                            final_word_position = word_position
+
+                                            # Adjust for merged verses
+                                            if len(hafs_segments_info) > 1:
+                                                cumulative_len = 0
+                                                found_seg = False
+                                                for seg in hafs_segments_info:
+                                                    if word_position <= cumulative_len + seg['length']:
+                                                        final_verse_number = seg['verse_number']
+                                                        final_word_position = word_position - cumulative_len
+                                                        found_seg = True
+                                                        break
+                                                    cumulative_len += seg['length']
+                                                
+                                                if not found_seg:
+                                                     final_verse_number = hafs_segments_info[-1]['verse_number']
+                                                     final_word_position = word_position - cumulative_len
+
+                                            # Only apply generic split logic if we haven't already handled it via explicit segment merging
+                                            if is_splitted_ayah and len(hafs_segments_info) <= 1:
                                                 if word_position > splitted_ayah_words:
+                                                    # Note: This logic might conflict with the segment logic above if logic differs.
+                                                    # For 2 verses, it likely produces same result.
                                                     word_position -= splitted_ayah_words
                                                     verse_number_in_surah = max(ayah_numbers_in_target_edition)
-
+                                                    
+                                                    # Update final vars if this block hit
+                                                    final_word_position = word_position
+                                                    final_verse_number = verse_number_in_surah
+                                            
                                             target_edition_ayah_number_in_surah = await get_narration_numbering_from_narration(
-                                                verse_surat_id, verse_number_in_surah, source_edition_identifier, edition.identifier
+                                                verse_surat_id, final_verse_number, source_edition_identifier, edition.identifier
                                             )
                                             target_min_number = min(target_edition_ayah_number_in_surah)
 
@@ -226,7 +266,7 @@ async def get_narrations_differences(page_number: int, source_edition_identifier
 
                                             difference_words.append({
                                                 "text": element["word"],
-                                                "location": f"{verse_surat_id}:{verse_number_in_surah}:{word_position}",
+                                                "location": f"{verse_surat_id}:{final_verse_number}:{final_word_position}",
                                                 "audio": audio_data
                                             })
 

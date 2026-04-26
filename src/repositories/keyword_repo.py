@@ -29,7 +29,7 @@ def is_arabic_text(keyword: str) -> bool:
 
 
 def normalize_arabic_text(text: str) -> str:
-    """Normalize Arabic text for search by removing diacritics and extra spaces."""
+    """Normalize Arabic text for fuzzy search (aggressive normalization)."""
     if not text:
         return text
     
@@ -56,9 +56,81 @@ def normalize_arabic_text(text: str) -> str:
     return text
 
 
+def fold_arabic_hamza_variants(text: str) -> str:
+    """Fold Arabic hamza variants for exact matching parity."""
+    if not text:
+        return text
+
+    return (text
+            .replace('أ', 'ا').replace('إ', 'ا').replace('آ', 'ا').replace('ٱ', 'ا')
+            .replace('ؤ', 'و').replace('ئ', 'ي')
+            .replace('ء', ''))
+
+
+def normalize_arabic_text_exact(text: str) -> str:
+    """Normalize Arabic text for exact search with hamza-variant folding only."""
+    if not text:
+        return text
+
+    # Keep strict exact semantics while folding hamza variants for user-friendly matching.
+    text = araby.strip_diacritics(text)
+    text = araby.strip_tatweel(text)
+    text = unicodedata.normalize('NFKC', text)
+    text = fold_arabic_hamza_variants(text)
+
+    text = re.sub(r'[،؛؟!\.\,\;\?]', '', text)
+    text = re.sub(r'\s+', ' ', text.strip())
+
+    return text
+
+
 def normalize_non_arabic_text(text: str) -> str:
     """Normalize non-Arabic text for search."""
     return re.sub(r'\s+', ' ', text.strip().lower())
+
+
+def normalize_non_arabic_text_exact(text: str) -> str:
+    """Normalize non-Arabic text for strict exact search boundaries."""
+    if not text:
+        return text
+
+    text = unicodedata.normalize('NFKC', text)
+    text = re.sub(r'[،؛؟!\.\,\;\?:\(\)\[\]\{\}"“”«»]', ' ', text)
+    text = re.sub(r'\s+', ' ', text.strip().lower())
+
+    return text
+
+
+def normalize_text_for_exact_boundaries(text: str) -> str:
+    """Normalize text to boundary-safe tokens for strict exact matching."""
+    if not text:
+        return text
+
+    text = unicodedata.normalize('NFKC', text)
+    text = fold_arabic_hamza_variants(text)
+    text = text.replace('ـ', '')
+    text = re.sub(r'[۞۩ۗۛۖۚۘۜۙ]', ' ', text)
+    text = re.sub(r'[،؛؟!\.\,\;\?:\(\)\[\]\{\}"“”«»]', ' ', text)
+    text = re.sub(r'\s+', ' ', text.strip())
+
+    return text
+
+
+def build_exact_boundary_pattern(normalized_keyword: str) -> str:
+    """Build SQL LIKE pattern that enforces whole-token or phrase boundaries."""
+    normalized_keyword = re.sub(r'\s+', ' ', (normalized_keyword or '').strip())
+    return f"% {normalized_keyword} %"
+
+
+def contains_exact_phrase(text: str, normalized_keyword: str) -> bool:
+    """Python mirror of strict exact boundary matching used for unit tests."""
+    prepared_text = f" {normalize_text_for_exact_boundaries(text).lower()} "
+    prepared_keyword = re.sub(r'\s+', ' ', (normalized_keyword or '').strip().lower())
+
+    if not prepared_keyword:
+        return False
+
+    return f" {prepared_keyword} " in prepared_text
 
 
 async def search_ayahs_by_keyword(
@@ -102,10 +174,10 @@ async def search_ayahs_by_keyword(
             target_edition_id = text_edition.id
         
         if is_arabic:
-            normalized_keyword = normalize_arabic_text(keyword)
+            normalized_keyword = normalize_arabic_text_exact(keyword) if exact_search else normalize_arabic_text(keyword)
             search_edition_id = CLEAN_ARABIC_EDITION_ID
         else:
-            normalized_keyword = normalize_non_arabic_text(keyword)
+            normalized_keyword = normalize_non_arabic_text_exact(keyword) if exact_search else normalize_non_arabic_text(keyword)
             # For non-Arabic text, use the requested edition for search
             # This supports multiple languages (English, French, Spanish, etc.)
             search_edition_id = target_edition_id
@@ -113,17 +185,51 @@ async def search_ayahs_by_keyword(
         async with AsyncSessionLocal() as session:
             # Search on the appropriate edition (clean Arabic or English)
             if exact_search:
-                # Exact search using simple text matching
+                # Exact search with strict token/phrase boundaries (no partial word matches).
                 search_query = text("""
-                    SELECT DISTINCT a.surat_id, a.numberinsurat, a.number
-                    FROM quranhub_schema.ayat a
-                    WHERE a.edition_id = :search_edition_id
-                    AND LOWER(a.text) LIKE LOWER(:search_pattern)
-                    ORDER BY a.number
+                    WITH exact_prepared AS (
+                        SELECT 
+                            a.surat_id,
+                            a.numberinsurat,
+                            a.number,
+                            btrim(
+                                regexp_replace(
+                                    regexp_replace(
+                                        regexp_replace(
+                                            regexp_replace(
+                                                translate(
+                                                    COALESCE(a.text, ''),
+                                                    'أإآٱؤئء',
+                                                    'ااااوي'
+                                                ),
+                                                '[۞۩ۗۛۖۚۘۜۙ]',
+                                                ' ',
+                                                'g'
+                                            ),
+                                            'ـ',
+                                            '',
+                                            'g'
+                                        ),
+                                        '[،؛؟!\\.\\,\\;\\?:\\(\\)\\[\\]\\{\\}\"“”«»]',
+                                        ' ',
+                                        'g'
+                                    ),
+                                    '\\s+',
+                                    ' ',
+                                    'g'
+                                )
+                            ) AS normalized_text
+                        FROM quranhub_schema.ayat a
+                        WHERE a.edition_id = :search_edition_id
+                    )
+                    SELECT DISTINCT surat_id, numberinsurat, number
+                    FROM exact_prepared
+                    WHERE (' ' || LOWER(normalized_text) || ' ') LIKE LOWER(:search_pattern)
+                    ORDER BY number
                     LIMIT :limit OFFSET :offset
                 """)
                 
-                search_pattern = f"%{normalized_keyword}%"
+                search_pattern = build_exact_boundary_pattern(normalized_keyword)
                 
             else:
                 # Fuzzy search using pg_trgm for typo tolerance

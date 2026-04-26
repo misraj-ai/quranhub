@@ -74,6 +74,25 @@ QURANIC_SYMBOLS = ["۞", "۩"]
 SPECIAL_CHARACTERS=['ۗ', 'ۛ', 'ۖ', 'ۚ', 'ۘ', 'ۜ', 'ۙ']
 QURANIC_SYMBOLS_TRANSLATION_TABLE = str.maketrans("", "", "".join(QURANIC_SYMBOLS))
 
+BASIC_TAJWEED_RULES = {
+    "ghunnah",
+    "idgham_ghunnah",
+    "idgham_shafawi",
+    "idgham_wo_ghunnah",
+    "ikhafa",
+    "ikhafa_shafawi",
+    "iqlab",
+    "izhar",
+    "izhar_shafawi",
+    "madda_necessary",
+    "madda_normal",
+    "madda_obligatory_mottasel",
+    "madda_permissible",
+    "qalaqah",
+    "tafkheem",
+    "tarqeeq"
+}
+
 BUNNY_URL="https://quranhub.b-cdn.net/quran"
 
 DB_USERNAME = os.environ.get('DB_USERNAME')
