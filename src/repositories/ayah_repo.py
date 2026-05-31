@@ -58,16 +58,16 @@ async def get_an_ayah(ayah_number: int, edition_identifier: str):
             "edition": {
                 "identifier": edition.identifier,
                 "language": edition.language,
-                "name": edition.name,
-                "englishName": edition.englishname,
+                "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+                "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
                 "format": edition.format,
                 "type": edition.type,
                 "direction": edition.direction
             },
             "surah": {
                 "number": result.id,
-                "name": result.name,
-                "englishName": result.englishname,
+                "name": result.name.get("ar") if isinstance(result.name, dict) else None,
+                "englishName": result.name.get("en") if isinstance(result.name, dict) else None,
                 "englishNameTranslation": result.englishtranslation,
                 "revelationType": result.revelationcity,
                 "numberOfAyahs": result.numberofayats
@@ -250,16 +250,16 @@ async def get_an_ayah_by_surah_number(surah_number: int, ayah_number: int, editi
             "edition": {
                 "identifier": edition.identifier,
                 "language": edition.language,
-                "name": edition.name,
-                "englishName": edition.englishname,
+                "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+                "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
                 "format": edition.format,
                 "type": edition.type,
                 "direction": edition.direction
             },
             "surah": {
                 "number": result.id,
-                "name": result.name,
-                "englishName": result.englishname,
+                "name": result.name.get("ar") if isinstance(result.name, dict) else None,
+                "englishName": result.name.get("en") if isinstance(result.name, dict) else None,
                 "englishNameTranslation": result.englishtranslation,
                 "revelationType": result.revelationcity,
                 "numberOfAyahs": result.numberofayats

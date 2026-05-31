@@ -6,7 +6,7 @@ from typing import Optional
 from db.session import AsyncSessionLocal
 from db.models import Edition  # Assuming Edition is in a models module
 from utils.logger import logger  # Assuming you have a logger module
-from utils.config import TAFSIR_BOOKS_TRANSLATION, TAFSIR_BOOKS_LANGUAGES, TAFSIR_BOOKS_LEVELS, DEFAULT_EDITION_IDENTIFIER
+from utils.config import TAFSIR_BOOKS_LANGUAGES, TAFSIR_BOOKS_LEVELS, DEFAULT_EDITION_IDENTIFIER
 from sqlalchemy.orm import selectinload
 
 async def get_text_edition_for_narrator(narrator_identifier):
@@ -50,6 +50,23 @@ async def get_editions_types():
     except Exception as e:
         logger.error("An exception occurred: %s", str(e))
         return "An error occurred while fetching types."
+
+async def get_editions_subtypes_by_type(edition_type: str):
+    try:
+        async with AsyncSessionLocal() as session:
+            query = select(Edition.subtype).filter(Edition.type == edition_type, Edition.subtype.isnot(None)).distinct()
+            result = await session.execute(query)
+            distinct_subtypes = result.scalars().all()
+
+        if not distinct_subtypes:
+            return "Subtypes not found"
+
+        return distinct_subtypes
+
+    except Exception as e:
+        logger.error("An exception occurred: %s", str(e))
+        return "An error occurred while fetching subtypes."
+
 
 async def get_editions_languages():
     try:
@@ -123,16 +140,17 @@ async def get_distinct_audio_edition_by_identifier(edition_identifier: str):
             return "not_audio"
         reciter = edition.reciter
         # Match the shape of get_distinct_audio_editions_by_englishname (no identifier, type, narratorIdentifier)
+        edition_name_dict = edition.name if isinstance(edition.name, dict) else {}
         return {
             "language": edition.language,
-            "name": edition.name,
-            "englishName": getattr(edition, 'englishname', None),
+            "name": edition_name_dict.get(edition.language, edition_name_dict.get('ar')),
+            "englishName": edition_name_dict.get('en'),
             "imageUrl": reciter.image_url if reciter else None,
             "shortDescription": reciter.short_description if reciter else None,
             "format": edition.format,
             "direction": edition.direction,
             "narratorIdentifier": edition.narrator_identifier,
-            "recitationType": _get_recitation_type(getattr(edition, 'englishname', None)),
+            "recitationType": _get_recitation_type(edition_name_dict.get('en')),
         }
     except Exception as e:
         logger.error(f"An exception occurred in get_distinct_audio_edition_by_identifier: {str(e)}")
@@ -145,27 +163,29 @@ def _get_recitation_type(englishname: str | None) -> str:
 def _format_audio_edition(item):
     """Format a single audio edition item."""
     reciter = item.reciter
+    item_name_dict = item.name if isinstance(item.name, dict) else {}
     return {
         "identifier": item.identifier,
         "language": item.language,
-        "name": item.name,
-        "englishName": item.englishname,
+        "name": item_name_dict.get('ar'),
+        "englishName": item_name_dict.get('en'),
         "imageUrl": reciter.image_url if reciter else None,
         "shortDescription": reciter.short_description if reciter else None,
         "format": item.format,
         "type": item.type,
         "direction": item.direction,
         "narratorIdentifier": item.narrator_identifier,
-        "recitationType": _get_recitation_type(item.englishname),
+        "recitationType": _get_recitation_type(item_name_dict.get('en')),
     }
 
 def _format_default_edition(item):
     """Format a single default edition item."""
+    item_name_dict = item.name if isinstance(item.name, dict) else {}
     return {
         "identifier": item.identifier,
         "language": item.language,
-        "name": item.name,
-        "englishName": item.englishname,
+        "name": item_name_dict.get('ar'),
+        "englishName": item_name_dict.get('en'),
         "format": item.format,
         "type": item.type,
         "direction": item.direction,
@@ -175,7 +195,7 @@ def _format_default_edition(item):
 def _format_tafsir_edition(item):
     """Format a single tafsir edition item, handling missing book in dictionary."""
     translated_name = []
-    book_translations = TAFSIR_BOOKS_TRANSLATION.get(item.name, {})
+    book_translations = item.name if isinstance(item.name, dict) else {}
     for lang in TAFSIR_BOOKS_LANGUAGES:
         translation = book_translations.get(lang)
         if translation:
@@ -191,7 +211,7 @@ def _format_tafsir_edition(item):
     return {
         "identifier": item.identifier,
         "language": item.language,
-        "name": item.name,
+        "name": book_translations.get('ar'),
         "translatedName": translated_name,
         "format": item.format,
         "type": item.type,
@@ -202,7 +222,7 @@ def _format_tafsir_edition(item):
     }
 
 
-async def get_edition(language=None, type=None, format=None, narrator=None, sort_by: Optional[str] = None):
+async def get_edition(language=None, type=None, format=None, narrator=None, sort_by: Optional[str] = None, subtype: Optional[str] = None):
     try:
         async with AsyncSessionLocal() as session:
             query = select(Edition).options(
@@ -218,11 +238,13 @@ async def get_edition(language=None, type=None, format=None, narrator=None, sort
                 query = query.filter(Edition.format == format)
             if narrator:
                 query = query.filter(Edition.narrator_identifier == narrator)
+            if subtype:
+                query = query.filter(Edition.subtype == subtype)
 
             # Determine sorting field
-            sort_field = Edition.name
+            sort_field = Edition.name['ar'].as_string()
             if sort_by == 'en':
-                sort_field = Edition.englishname
+                sort_field = Edition.name['en'].as_string()
 
             # Add sorting: Arabic narrators first, then alphabetically by name/englishName
             query = query.order_by(
@@ -306,7 +328,12 @@ async def get_audio_edition_by_max_bitrate(narration_identifier: str):
         async with AsyncSessionLocal() as session:
             # Query the editions asynchronously for the given narration identifier
             result = await session.execute(
-                select(Edition.bitrates, Edition.identifier, Edition.name, Edition.narrator_identifier)
+                select(
+                    Edition.bitrates,
+                    Edition.identifier,
+                    Edition.name['ar'].as_string().label('name'),
+                    Edition.narrator_identifier
+                )
                 .filter(Edition.narrator_identifier == narration_identifier)
             )
 
@@ -348,20 +375,21 @@ async def get_distinct_audio_editions_by_englishname():
                 select(Edition)
                 .options(selectinload(Edition.reciter))
                 .filter(Edition.format == "audio")
-                .order_by(Edition.englishname)
+                .order_by(Edition.name['en'].as_string())
             )
             editions = result.scalars().all()
 
         # Use a dict to ensure uniqueness by englishname (first occurrence after sorting)
         unique = {}
         for item in editions:
-            if item.englishname not in unique:
+            item_english_name = item.name.get('en') if isinstance(item.name, dict) else None
+            if item_english_name not in unique:
                 formatted = _format_audio_edition(item)
                 # Remove identifier, type, narratorIdentifier
                 formatted.pop("identifier", None)
                 formatted.pop("type", None)
                 formatted.pop("narratorIdentifier", None)
-                unique[item.englishname] = formatted
+                unique[item_english_name] = formatted
 
         return list(unique.values())
 
@@ -585,12 +613,13 @@ async def get_tafsir_edition_by_identifier(edition_identifier: str):
         if edition.type != "tafsir":
             return "not_tafsir"
         tafsir = edition.tafsir
+        edition_name_dict = edition.name if isinstance(edition.name, dict) else {}
         # Canonical tafsir edition metadata (matches canonical tafsir response shape)
         data = {
             "identifier": edition.identifier,
             "language": edition.language,
-            "name": edition.name,
-            "englishName": getattr(edition, 'englishname', None),
+            "name": edition_name_dict.get(edition.language, edition_name_dict.get('ar')),
+            "englishName": edition_name_dict.get('en'),
             "format": edition.format,
             "type": edition.type,
             "direction": edition.direction,

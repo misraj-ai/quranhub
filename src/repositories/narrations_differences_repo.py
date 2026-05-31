@@ -46,7 +46,7 @@ async def get_narrations_differences_db(
             select(
                 NarrationsDifferences.difference_text,
                 NarrationsDifferences.difference_content,
-                Edition.name
+                Edition.name['ar'].as_string().label('name')
             )
             .join(
                 Edition, NarrationsDifferences.edition_id == Edition.id

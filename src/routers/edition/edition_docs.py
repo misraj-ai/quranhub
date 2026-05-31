@@ -14,6 +14,7 @@ getTafsirEditionByIdentifierResponse = {
                         "englishName": "Al-Mukhtasar",
                         "format": "text",
                         "type": "tafsir",
+                            "subtype": "tafsir",
                         "direction": "rtl",
                         "narratorIdentifier": None,
                         "imageUrl": "https://quranhub.b-cdn.net/quran/images/tafsirs/al-mukhtasar.jpg"
@@ -67,6 +68,7 @@ getTheEditionResponse = {
                             "englishName": "Simple", 
                             "format": "text",
                             "type": "quran",
+                            "subtype": "mushaf",
                             "direction": "rtl",
                             "narratorIdentifier": None
                         },
@@ -77,6 +79,7 @@ getTheEditionResponse = {
                             "englishName": "Abdullah Basfar",
                             "format": "audio",
                             "type": "versebyverse",
+                            "subtype": "recitation",
                             "direction": "rtl",
                             "narratorIdentifier": "quran-hafs",
                             "description": {
@@ -92,6 +95,7 @@ getTheEditionResponse = {
                             "englishName": "Saheeh International",
                             "format": "text",
                             "type": "translation",
+                            "subtype": "translation",
                             "direction": "ltr",
                             "narratorIdentifier": None
                         },
@@ -102,6 +106,7 @@ getTheEditionResponse = {
                             "englishName": "Al-Mukhtasar",
                             "format": "text",
                             "type": "tafsir",
+                            "subtype": "tafsir",
                             "direction": "rtl",
                             "narratorIdentifier": None,
                             "description": {
@@ -117,6 +122,7 @@ getTheEditionResponse = {
                             "englishName": "Hafs from 'Aasem",
                             "format": "text",
                             "type": "narration",
+                            "subtype": "narration",
                             "direction": "rtl",
                             "narratorIdentifier": None
                         }
@@ -193,6 +199,7 @@ getTheEditionByLanguageResponse = {
                                     "englishName": "Simple",
                                     "format": "text",
                                     "type": "quran",
+                            "subtype": "mushaf",
                                     "direction": "rtl",
                                     "narratorIdentifier": None
                                 },
@@ -203,6 +210,7 @@ getTheEditionByLanguageResponse = {
                                     "englishName": "Abu Bakr Ash-Shaatree",
                                     "format": "audio",
                                     "type": "versebyverse",
+                            "subtype": "recitation",
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/shaatree.jpg",
@@ -215,6 +223,7 @@ getTheEditionByLanguageResponse = {
                                     "englishName": "Al-Mukhtasar",
                                     "format": "text",
                                     "type": "tafsir",
+                            "subtype": "tafsir",
                                     "direction": "rtl",
                                     "narratorIdentifier": None
                                 }
@@ -234,6 +243,7 @@ getTheEditionByLanguageResponse = {
                                     "englishName": "Saheeh International",
                                     "format": "text",
                                     "type": "translation",
+                            "subtype": "translation",
                                     "direction": "ltr",
                                     "narratorIdentifier": None
                                 },
@@ -244,6 +254,7 @@ getTheEditionByLanguageResponse = {
                                     "englishName": "Abul Ala Maududi",
                                     "format": "text",
                                     "type": "translation",
+                            "subtype": "translation",
                                     "direction": "ltr",
                                     "narratorIdentifier": None
                                 }
@@ -322,6 +333,7 @@ getTheEditionByTypeResponse = {
                                     "englishName": "Al-Mukhtasar",
                                     "format": "text",
                                     "type": "tafsir",
+                            "subtype": "tafsir",
                                     "direction": "rtl",
                                     "narratorIdentifier": None
                                 },
@@ -332,6 +344,7 @@ getTheEditionByTypeResponse = {
                                     "englishName": "Al-Mukhtasar",
                                     "format": "text",
                                     "type": "tafsir",
+                            "subtype": "tafsir",
                                     "direction": "rtl",
                                     "narratorIdentifier": None
                                 }
@@ -351,6 +364,7 @@ getTheEditionByTypeResponse = {
                                     "englishName": "Abu Bakr Ash-Shaatree",
                                     "format": "audio",
                                     "type": "versebyverse",
+                            "subtype": "recitation",
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/shaatree.jpg",
@@ -363,6 +377,7 @@ getTheEditionByTypeResponse = {
                                     "englishName": "Ahmed ibn Ali al-Ajamy",
                                     "format": "audio",
                                     "type": "surah",
+                            "subtype": "recitation",
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/ajamy.jpg",
@@ -408,6 +423,7 @@ getTheEditionByTypeAndLanguageResponse = {
                                     "englishName": "Al-Muyassar",
                                     "format": "text",
                                     "type": "translation",
+                            "subtype": "translation",
                                     "direction": "rtl",
                                     "narratorIdentifier": None
                                 }
@@ -427,6 +443,7 @@ getTheEditionByTypeAndLanguageResponse = {
                                     "englishName": "Saheeh International",
                                     "format": "text",
                                     "type": "translation",
+                            "subtype": "translation",
                                     "direction": "ltr",
                                     "narratorIdentifier": None
                                 },
@@ -437,6 +454,7 @@ getTheEditionByTypeAndLanguageResponse = {
                                     "englishName": "Abul Ala Maududi",
                                     "format": "text",
                                     "type": "translation",
+                            "subtype": "translation",
                                     "direction": "ltr",
                                     "narratorIdentifier": None
                                 }
@@ -456,6 +474,7 @@ getTheEditionByTypeAndLanguageResponse = {
                                     "englishName": "Al-Mukhtasar",
                                     "format": "text",
                                     "type": "tafsir",
+                            "subtype": "tafsir",
                                     "direction": "rtl",
                                     "narratorIdentifier": None
                                 }
@@ -529,6 +548,7 @@ getTheEditionByFormatResponse = {
                                     "englishName": "Abu Bakr Ash-Shaatree",
                                     "format": "audio",
                                     "type": "versebyverse",
+                            "subtype": "recitation",
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/shaatree.jpg",
@@ -541,6 +561,7 @@ getTheEditionByFormatResponse = {
                                     "englishName": "Ahmed ibn Ali al-Ajamy",
                                     "format": "audio",
                                     "type": "surah",
+                            "subtype": "recitation",
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/ajamy.jpg",
@@ -562,6 +583,7 @@ getTheEditionByFormatResponse = {
                                     "englishName": "Simple",
                                     "format": "text",
                                     "type": "quran",
+                            "subtype": "mushaf",
                                     "direction": "rtl",
                                     "narratorIdentifier": None
                                 },
@@ -572,6 +594,7 @@ getTheEditionByFormatResponse = {
                                     "englishName": "Saheeh International",
                                     "format": "text",
                                     "type": "translation",
+                            "subtype": "translation",
                                     "direction": "ltr",
                                     "narratorIdentifier": None
                                 }
@@ -612,6 +635,7 @@ getTheEditionByFormatAndTypeResponse = {
                             "englishName": "Simple", 
                             "format": "text",
                             "type": "quran",
+                            "subtype": "mushaf",
                             "direction": "rtl",
                             "narratorIdentifier": None
                         },
@@ -622,6 +646,7 @@ getTheEditionByFormatAndTypeResponse = {
                             "englishName": "Hafs from 'Aasem",
                             "format": "text",
                             "type": "narration",
+                            "subtype": "narration",
                             "direction": "rtl",
                             "narratorIdentifier": None
                         }
@@ -696,6 +721,7 @@ getTheAudioEditionByNarratorIdentifierResponse = {
                             "englishName": "Abu Bakr Ash-Shaatree",
                             "format": "audio",
                             "type": "versebyverse",
+                            "subtype": "recitation",
                             "direction": "rtl",
                             "narratorIdentifier": "quran-warsh",
                             "imageUrl": "https://example.com/reciters/shaatree.jpg",
@@ -709,6 +735,7 @@ getTheAudioEditionByNarratorIdentifierResponse = {
                             "englishName": "Warsh Premium Quality",
                             "format": "audio",
                             "type": "versebyverse",
+                            "subtype": "recitation",
                             "direction": "rtl",
                             "narratorIdentifier": "quran-warsh",
                             "imageUrl": "https://example.com/reciters/warsh.jpg",
@@ -750,6 +777,7 @@ getDistinctAudioEditionByIdentifierResponse = {
                         "englishName": "Abdullah Basfar",
                         "format": "audio",
                         "type": "versebyverse",
+                            "subtype": "recitation",
                         "direction": "rtl",
                         "narratorIdentifier": "quran-hafs",
                         "description": {
@@ -949,6 +977,37 @@ getEditionsAnalysisResponse = {
                     "code": 400,
                     "status": "Error",
                     "data": "Something went wrong: An error occurred while performing editions analysis"
+                }
+            }
+        }
+    }
+}
+
+getTheEditionSubtypesByTypeResponse = {
+    200: {
+        "description": "Successful Response - List of all available subtypes for the specified edition type",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 200,
+                    "status": "OK",
+                    "data": [
+                        "irab",
+                        "gharib",
+                        "tafsir"
+                    ]
+                }
+            }
+        }
+    },
+    400: {
+        "description": "Bad Request - Error occurred while fetching subtypes",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 400,
+                    "status": "Error",
+                    "data": "Something wrong happened: Subtypes not found"
                 }
             }
         }

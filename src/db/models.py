@@ -44,13 +44,14 @@ class Edition(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     identifier = Column(String(100), nullable=False, index=True)
     language = Column(String(2), nullable=False, index=True)
-    englishname = Column(String(500), nullable=False)
+    # englishname column is removed
     format = Column(String(50), nullable=False, index=True)
     type = Column(String(50), nullable=False, index=True)
+    subtype = Column(String(50), nullable=True, index=True)
     bitrates = Column(ARRAY(Integer), nullable=True)
     source = Column(String(500), nullable=True)
     lastupdated = Column(String(50), nullable=True)
-    name = Column(String(1000), nullable=False)
+    name = Column(JSONB, nullable=False)
     direction = Column(String(3), nullable=True)
     narrator_identifier = Column(String(100), nullable=True, index=True)
     # New relationship field

@@ -95,8 +95,8 @@ async def get_quran(edition_identifier):
         edition_data = {
             "identifier": edition.identifier,
             "language": edition.language,
-            "name": edition.name,
-            "englishName": edition.englishname,
+            "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+            "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
             "format": edition.format,
             "type": edition.type,
             "direction": edition.direction

@@ -63,8 +63,8 @@ async def get_juz(juz_number, edition_identifier, limit, offset):
                     "text": item.text,
                     "surah": {
                         "number": item.id,
-                        "name": item.name,
-                        "englishName": item.englishname,
+                        "name": item.name.get("ar") if isinstance(item.name, dict) else None,
+                        "englishName": item.name.get("en") if isinstance(item.name, dict) else None,
                         "englishNameTranslation": item.englishtranslation,
                         "revelationType": item.revelationcity,
                         "numberOfAyahs": item.numberofayats
@@ -82,8 +82,8 @@ async def get_juz(juz_number, edition_identifier, limit, offset):
                 if item.id not in surahs_ids:
                     surahs.append({
                         "number": item.id,
-                        "name": item.name,
-                        "englishName": item.englishname,
+                        "name": item.name.get("ar") if isinstance(item.name, dict) else None,
+                        "englishName": item.name.get("en") if isinstance(item.name, dict) else None,
                         "englishNameTranslation": item.englishtranslation,
                         "revelationType": item.revelationcity,
                         "numberOfAyahs": item.numberofayats
@@ -102,8 +102,8 @@ async def get_juz(juz_number, edition_identifier, limit, offset):
         edition_data = {
             "identifier": edition.identifier,
             "language": edition.language,
-            "name": edition.name,
-            "englishName": edition.englishname,
+            "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+            "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
             "format": edition.format,
             "type": edition.type,
             "direction": edition.direction
@@ -182,8 +182,8 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
                         },
                         "firstSurah": {
                             "number": row.id,
-                            "name": row.name,
-                            "englishName": row.englishname,
+                            "name": row.name.get("ar") if isinstance(row.name, dict) else None,
+                            "englishName": row.name.get("en") if isinstance(row.name, dict) else None,
                             "englishNameTranslation": row.englishtranslation,
                             "revelationType": row.revelationcity,
                             "numberOfAyahs": row.numberofayats
@@ -206,7 +206,7 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
                             },
                             "firstSurah": {
                                 "number": row.id,
-                                "name": row.name,
+                                "name": row.name.get("ar") if isinstance(row.name, dict) else None,
                                 "englishName": row.englishname
                             }
                         }
@@ -227,7 +227,7 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
                             },
                             "firstSurah": {
                                 "number": row.id,
-                                "name": row.name,
+                                "name": row.name.get("ar") if isinstance(row.name, dict) else None,
                                 "englishName": row.englishname
                             }
                         }
@@ -299,8 +299,8 @@ async def get_all_juzs(edition_identifier=DEFAULT_EDITION_IDENTIFIER, include_hi
         edition_data = {
             "identifier": edition.identifier,
             "language": edition.language,
-            "name": edition.name,
-            "englishName": edition.englishname,
+            "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+            "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
             "format": edition.format,
             "type": edition.type,
             "direction": edition.direction

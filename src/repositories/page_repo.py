@@ -140,8 +140,8 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                             "text": prev_item.text,
                             "surah": {
                                 "number": prev_item.id,
-                                "name": prev_item.name,
-                                "englishName": prev_item.englishname,
+                                "name": prev_item.name.get("ar") if isinstance(prev_item.name, dict) else None,
+                                "englishName": prev_item.name.get("en") if isinstance(prev_item.name, dict) else None,
                                 "englishNameTranslation": prev_item.englishtranslation,
                                 "revelationType": prev_item.revelationcity,
                                 "numberOfAyahs": prev_item.numberofayats,
@@ -198,8 +198,8 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                             if prev_item.id not in surah_ids:
                                 surahs.append({
                                     "number": prev_item.id,
-                                    "name": prev_item.name,
-                                    "englishName": prev_item.englishname,
+                                    "name": prev_item.name.get("ar") if isinstance(prev_item.name, dict) else None,
+                                    "englishName": prev_item.name.get("en") if isinstance(prev_item.name, dict) else None,
                                     "englishNameTranslation": prev_item.englishtranslation,
                                     "revelationType": prev_item.revelationcity,
                                     "numberOfAyahs": prev_item.numberofayats,
@@ -215,8 +215,8 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                 "text": item.text,
                 "surah": {
                     "number": item.id,
-                    "name": item.name,
-                    "englishName": item.englishname,
+                    "name": item.name.get("ar") if isinstance(item.name, dict) else None,
+                    "englishName": item.name.get("en") if isinstance(item.name, dict) else None,
                     "englishNameTranslation": item.englishtranslation,
                     "revelationType": item.revelationcity,
                     "numberOfAyahs": item.numberofayats
@@ -272,8 +272,8 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
             if item.id not in surah_ids:
                 surahs.append({
                     "number": item.id,
-                    "name": item.name,
-                    "englishName": item.englishname,
+                    "name": item.name.get("ar") if isinstance(item.name, dict) else None,
+                    "englishName": item.name.get("en") if isinstance(item.name, dict) else None,
                     "englishNameTranslation": item.englishtranslation,
                     "revelationType": item.revelationcity,
                     "numberOfAyahs": item.numberofayats
@@ -298,8 +298,8 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
         edition_info = {
             "identifier": edition.identifier,
             "language": edition.language,
-            "name": edition.name,
-            "englishName": edition.englishname,
+            "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+            "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
             "format": edition.format,
             "type": edition.type,
             "direction": edition.direction
@@ -382,8 +382,8 @@ async def get_all_pages(edition_identifier=DEFAULT_EDITION_IDENTIFIER):
                         },
                         "firstSurah": {
                             "number": item.id,
-                            "name": item.name,
-                            "englishName": item.englishname,
+                            "name": item.name.get("ar") if isinstance(item.name, dict) else None,
+                            "englishName": item.name.get("en") if isinstance(item.name, dict) else None,
                             "englishNameTranslation": item.englishtranslation,
                             "revelationType": item.revelationcity,
                             "numberOfAyahs": item.numberofayats
@@ -399,8 +399,8 @@ async def get_all_pages(edition_identifier=DEFAULT_EDITION_IDENTIFIER):
         edition_data = {
             "identifier": edition.identifier,
             "language": edition.language,
-            "name": edition.name,
-            "englishName": edition.englishname,
+            "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+            "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
             "format": edition.format,
             "type": edition.type,
             "direction": edition.direction

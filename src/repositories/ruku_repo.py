@@ -65,8 +65,8 @@ async def get_ruku(ruku_number: int, edition_identifier: str, limit: int, offset
                 "text": item.text,
                 "surah": {
                     "number": item.id,
-                    "name": item.name,
-                    "englishName": item.englishname,
+                    "name": item.name.get("ar") if isinstance(item.name, dict) else None,
+                    "englishName": item.name.get("en") if isinstance(item.name, dict) else None,
                     "englishNameTranslation": item.englishtranslation,
                     "revelationType": item.revelationcity,
                     "numberOfAyahs": item.numberofayats
@@ -82,8 +82,8 @@ async def get_ruku(ruku_number: int, edition_identifier: str, limit: int, offset
             if item.id not in surah_ids:
                 surahs.append({
                     "number": item.id,
-                    "name": item.name,
-                    "englishName": item.englishname,
+                    "name": item.name.get("ar") if isinstance(item.name, dict) else None,
+                    "englishName": item.name.get("en") if isinstance(item.name, dict) else None,
                     "englishNameTranslation": item.englishtranslation,
                     "revelationType": item.revelationcity,
                     "numberOfAyahs": item.numberofayats
@@ -101,8 +101,8 @@ async def get_ruku(ruku_number: int, edition_identifier: str, limit: int, offset
         edition_info = {
             "identifier": edition.identifier,
             "language": edition.language,
-            "name": edition.name,
-            "englishName": edition.englishname,
+            "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+            "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
             "format": edition.format,
             "type": edition.type,
             "direction": edition.direction

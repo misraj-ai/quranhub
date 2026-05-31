@@ -50,8 +50,8 @@ async def get_all_surahs(order_by_revelation_order=False):
                 "number": item.id,
                 "startingPage": item.startingPage,
                 "endingPage": item.endingPage,
-                "name": item.name,
-                "englishName": item.englishname,
+                "name": item.name.get("ar") if isinstance(item.name, dict) else None,
+                "englishName": item.name.get("en") if isinstance(item.name, dict) else None,
                 "englishNameTranslation": item.englishtranslation,
                 "revelationType": item.revelationcity,
                 "numberOfAyahs": item.numberofayats,
@@ -368,8 +368,8 @@ async def get_surah(
         edition_data = {
             "identifier": edition.identifier,
             "language": edition.language,
-            "name": edition.name,
-            "englishName": edition.englishname,
+            "name": edition.name.get("ar") if isinstance(edition.name, dict) else None,
+            "englishName": edition.name.get("en") if isinstance(edition.name, dict) else None,
             "format": edition.format,
             "type": edition.type,
             "direction": edition.direction
@@ -377,10 +377,10 @@ async def get_surah(
 
         result_data = {
             "number": surah_meta.id,
-            "name": surah_meta.name,
+            "name": surah_meta.name.get("ar") if isinstance(surah_meta.name, dict) else None,
             "audio": surah_audio_url,
             "audioSecondary": surah_audio_secondary_urls,
-            "englishName": surah_meta.englishname,
+            "englishName": surah_meta.name.get("en") if isinstance(surah_meta.name, dict) else None,
             "englishNameTranslation": surah_meta.englishtranslation,
             "revelationType": surah_meta.revelationcity,
             "numberOfAyahs": surah_meta.numberofayats,
@@ -564,8 +564,8 @@ async def get_surah_by_multiple_editions(surah_number, edition_identifiers, limi
             # Add the final data for the edition
             edition_result = {
                 "number": surah_meta.id,
-                "name": surah_meta.name,
-                "englishName": surah_meta.englishname,
+                "name": surah_meta.name.get("ar") if isinstance(surah_meta.name, dict) else None,
+                "englishName": surah_meta.name.get("en") if isinstance(surah_meta.name, dict) else None,
                 "englishNameTranslation": surah_meta.englishtranslation,
                 "revelationType": surah_meta.revelationcity,
                 "numberOfAyahs": surah_meta.numberofayats,

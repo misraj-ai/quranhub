@@ -16,7 +16,7 @@ from .edition_docs import (
     getTheEditionByFormatAndTypeResponse,
     getTheAudioEditionByNarratorIdentifierResponse,
     getEditionsAnalysisResponse,
-    # Add canonical docs for tafsir edition by identifier
+    getTheEditionSubtypesByTypeResponse,
 )
 
 
@@ -45,10 +45,11 @@ async def get_the_edition(
     format: str = Query(None, description="Specify a format. 'text' or 'audio'", example='text'),
     language: str = Query(None, min_length=2, max_length=2, description="A 2-digit language code", example="ar"),
     type: str = Query(None, description="A valid type for edition", example="quran"),
-    sortBy: Optional[str] = Query('ar', description="Sort by 'ar' (Arabic name) or 'en' (English name)", example='en')
+    sortBy: Optional[str] = Query('ar', description="Sort by 'ar' (Arabic name) or 'en' (English name)", example='en'),
+    subtype: Optional[str] = Query(None, description="Filter by subtype (e.g. 'tafsir', 'irab', 'gharib', 'mushaf', 'wordbyword')")
 ):
     try:
-        data = await edition_repo.get_edition(language=language, type=type, format=format, sort_by=sortBy)
+        data = await edition_repo.get_edition(language=language, type=type, format=format, sort_by=sortBy, subtype=subtype)
         if isinstance(data, str):
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something wrong happened: {data}"},
@@ -194,6 +195,48 @@ async def get_the_edition_types():
 
   # Cache for 1 day
 @edition_router.get(
+    "/type/{type}/subtypes",
+    responses=getTheEditionSubtypesByTypeResponse,
+    tags=["Edition"],
+    name="Lists all subtypes for a specific type",
+    summary="List all subtypes for a specific edition type",
+    description="Lists all subtypes in which Quranic editions are available for a given type. Use this to discover supported subtypes for filtering.",
+    openapi_extra={
+        "x-agent-hints": "Call this endpoint to get all supported edition subtypes for a given type. Use the subtype values in subsequent edition queries.",
+        "x-mcp-example": {
+            "name": "get_edition_subtypes_by_type_v1_edition_type_type_subtypes_get",
+            "arguments": {"type": "tafsir"}
+        }
+    }
+)
+async def get_the_edition_subtypes_by_type(
+    type: str = Path(..., description="A valid type for edition", example="tafsir")
+):
+    try:
+        data = await edition_repo.get_editions_subtypes_by_type(type)
+        if isinstance(data, str):
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
+                status_code=400
+            )
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        response = JSONResponse(
+            content={"code": 200, "status": "OK", "data": data},
+            status_code=200
+        )
+        add_cache_headers(response, cache_tag=f"edition:type:{type}:subtypes")
+        return response
+    except Exception as e:
+        logger.error("An exception occurred: %s", str(e))
+        return JSONResponse(
+            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+            status_code=400
+        )
+
+
+  # Cache for 1 day
+@edition_router.get(
     "/type/{type}",
     responses=getTheEditionByTypeResponse,
     tags=["Edition"],
@@ -208,9 +251,12 @@ async def get_the_edition_types():
         }
     }
 )
-async def get_the_edition_by_type(type: str = Path(..., description="A valid type for edition", example="quran")):
+async def get_the_edition_by_type(
+    type: str = Path(..., description="A valid type for edition", example="quran"),
+    subtype: Optional[str] = Query(None, description="Filter by subtype")
+):
     try:
-        data = await edition_repo.get_edition(type=type)
+        data = await edition_repo.get_edition(type=type, subtype=subtype)
         if isinstance(data, str):
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
@@ -250,10 +296,11 @@ async def get_the_edition_by_type(type: str = Path(..., description="A valid typ
 )
 async def get_edition_by_type_and_language(
     type: str = Path(..., description="A valid type for edition", example="translation"),
-    language: str = Path(..., min_length=2, max_length=2, description="A 2-digit language code", example="en")
+    language: str = Path(..., min_length=2, max_length=2, description="A 2-digit language code", example="en"),
+    subtype: Optional[str] = Query(None, description="Filter by subtype")
 ):
     try:
-        data = await edition_repo.get_edition(type=type, language=language)
+        data = await edition_repo.get_edition(type=type, language=language, subtype=subtype)
         if isinstance(data, str):
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
@@ -374,10 +421,11 @@ async def get_edition_by_format(format: str = Path(..., description="A valid for
 )
 async def get_edition_by_format_and_type(
     format: str = Path(..., description="A valid format for edition", example="text"),
-    type: str = Path(..., description="A valid type for edition", example="narration")
+    type: str = Path(..., description="A valid type for edition", example="narration"),
+    subtype: Optional[str] = Query(None, description="Filter by subtype")
 ):
     try:
-        data = await edition_repo.get_edition(format=format, type=type)
+        data = await edition_repo.get_edition(format=format, type=type, subtype=subtype)
         if isinstance(data, str):
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
@@ -561,7 +609,8 @@ async def get_edition_narrator_identifiers():
 async def get_audio_edition_by_narrator_identifier(
     narratorIdentifier: str = Path(..., description="A valid narrator identifier for edition", example="quran-warsh"),
     language: Optional[str] = Query(None, description="Filter by language code (e.g., 'ar', 'en', 'fa')", example="ar"),
-    sortBy: Optional[str] = Query('ar', description="Sort by 'ar' (Arabic name) or 'en' (English name)", example='en')
+    sortBy: Optional[str] = Query('ar', description="Sort by 'ar' (Arabic name) or 'en' (English name)", example='en'),
+    subtype: Optional[str] = Query(None, description="Filter by subtype (e.g. 'recitation')")
 ):
     try:
         data = await edition_repo.get_edition(
@@ -569,7 +618,8 @@ async def get_audio_edition_by_narrator_identifier(
             narrator=narratorIdentifier, 
             type="versebyverse", 
             language=language,
-            sort_by=sortBy
+            sort_by=sortBy,
+            subtype=subtype
         )
         if isinstance(data, str):
             response = JSONResponse(
