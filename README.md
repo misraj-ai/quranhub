@@ -35,8 +35,8 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 <td>
 
 **Content Coverage**
-- 📚 **+430** Total Editions  
-- 📝 **+342** Text Editions  
+- 📚 **+433** Total Editions  
+- 📝 **+345** Text Editions  
 - 🔊 **+88** Audio Editions  
 - 📊 **+354,346** Audio Files  
 - 🧠 **+77,433** Quranic Words Analyzed  
@@ -49,10 +49,10 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 <td>
 
 **Edition Types**
-- 📖 **+156** Tafsir Editions
-- 🌍 **+164** Translations
+- 📖 **+157** Tafsir Editions
+- 🌍 **+167** Translations
 - 🎤 **+45** Surah Recitations
-- 📤 **+12** Quran Scripts
+- 📤 **+13** Quran Scripts
 - 📿 **+43** Verse-by-Verse
 - 🗣️ **+8** Narrations
 
@@ -147,6 +147,7 @@ Manage and retrieve different Quran editions, translations, and formats.
 | `get_editions_by_language` | Editions by language | `"ar"` or `"en"` |
 | `get_all_types` | Get edition types | - |
 | `get_editions_by_type` | Editions by type | `"translation"` |
+| `get_edition_subtypes_by_type` | Get edition subtypes | `type: "tafsir"` |
 | `get_all_formats` | Get edition formats | - |
 | `get_editions_by_format` | Editions by format | `"audio"` or `"text"` |
 | `get_editions_by_format_and_type` | Editions by format and type | `format: "text", type: "narration"` |
@@ -361,7 +362,7 @@ For accepted contributions, contributors will need to sign a Contributor License
 
 **Developed with ❤️ by [Misraj AI](https://misraj.ai)**
 
-**© 2025 Misraj AI. All Rights Reserved.**
+**© 2026 Misraj AI. All Rights Reserved.**
 
 [⬆️ Back to Top](#-quranhub-api)
 
