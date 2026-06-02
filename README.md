@@ -255,8 +255,8 @@ For complete API documentation and additional features, visit [https://qurani.ai
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/misraj-ai/quranhub-api.git
-cd quranhub-api
+git clone https://github.com/misraj-ai/quranhub.git
+cd quranhub
 ```
 
 2. **Create virtual environment**
