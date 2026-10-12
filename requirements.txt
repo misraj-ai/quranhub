@@ -1,5 +1,7 @@
 psycopg2
-SQLAlchemy
+# Pinned to the 2.0 line: 2.1 moved greenlet (required by sqlalchemy.ext.asyncio)
+# into the [asyncio] extra, which broke app startup.
+SQLAlchemy[asyncio]>=2.0,<2.1
 fastapi
 uvicorn
 python-json-logger

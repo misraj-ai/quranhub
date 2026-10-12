@@ -3,7 +3,7 @@ from utils.logger import logger
 from utils.config import DEFAULT_EDITION_IDENTIFIER
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
 from db.models import Ayat, Surat
-from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls
+from utils.helpers import add_ayah_audio, has_ayah_audio
 from db.session import AsyncSessionLocal  # Assuming AsyncSessionLocal is defined for async sessions
 
 async def get_juz(juz_number, edition_identifier, limit, offset):
@@ -91,13 +91,9 @@ async def get_juz(juz_number, edition_identifier, limit, offset):
                     surahs_ids.append(item.id)
 
         # If edition format is audio, add audio URLs for the Ayahs
-        if edition.format == "audio":
-            bitrates = edition.bitrates
-            max_bitrate = max(bitrates)
-            remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
+        if has_ayah_audio(edition):
             for item in results:
-                item["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, item["number"])
-                item["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, item["number"])
+                add_ayah_audio(item, edition, item["number"])
 
         edition_data = {
             "identifier": edition.identifier,

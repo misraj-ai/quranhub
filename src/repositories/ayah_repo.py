@@ -4,7 +4,20 @@ from db.session import AsyncSessionLocal
 from utils.logger import logger
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
 from utils.config import DEFAULT_EDITION_IDENTIFIER
-from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls
+from utils.helpers import add_ayah_audio
+
+
+async def _text_edition_for_audio(edition):
+    """Text edition whose ayat back an audio edition: the narrator's text (e.g. quran-warsh), else the default.
+
+    The audio identifier itself (e.g. ar.abdulsamad.warsh) never matches a text edition, so it
+    must not be used for this lookup: it silently fell back to quran-simple, which has Hafs
+    numbering, and pointed non-Hafs reciters at the wrong audio file.
+    """
+    if edition.narrator_identifier:
+        return await get_text_edition_for_narrator(edition.narrator_identifier)
+    return await get_edition_by_identifier(DEFAULT_EDITION_IDENTIFIER)
+
 
 async def get_an_ayah(ayah_number: int, edition_identifier: str):
     try:
@@ -18,7 +31,7 @@ async def get_an_ayah(ayah_number: int, edition_identifier: str):
         edition_id = edition.id
         if edition.format == "audio":
             # Fetch text edition for narrator-specific audio
-            text_edition = await get_text_edition_for_narrator(edition.identifier)
+            text_edition = await _text_edition_for_audio(edition)
             if isinstance(text_edition, str):  # If it's an error message
                 return text_edition
             edition_id = text_edition.id
@@ -81,13 +94,8 @@ async def get_an_ayah(ayah_number: int, edition_identifier: str):
             "sajda": result.sajda_id if result.sajda_id else False
         }
 
-        # If the edition is audio, add the audio details
-        if edition.format == "audio":
-            bitrates = edition.bitrates
-            max_bitrate = max(bitrates)
-            remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
-            ayah["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, ayah["number"])
-            ayah["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, ayah["number"])
+        # Per-ayah audio URLs exist only for verse-by-verse editions
+        add_ayah_audio(ayah, edition, ayah["number"])
 
         return ayah
 
@@ -117,7 +125,7 @@ async def get_an_ayah_by_multiple_editions(ayah_number: int, edition_identifiers
             for item in editions:
                 edition_id = item.id
                 if item.format == "audio":
-                    text_edition = await get_text_edition_for_narrator(item.identifier)
+                    text_edition = await _text_edition_for_audio(item)
                     if isinstance(text_edition, str):  # If it's an error message
                         return text_edition
                     edition_id = text_edition.id
@@ -153,8 +161,8 @@ async def get_an_ayah_by_multiple_editions(ayah_number: int, edition_identifiers
                 "edition": {
                     "identifier": editions[i].identifier,
                     "language": editions[i].language,
-                    "name": editions[i].name,
-                    "englishName": editions[i].englishname,
+                    "name": editions[i].name.get("ar") if isinstance(editions[i].name, dict) else None,
+                    "englishName": editions[i].name.get("en") if isinstance(editions[i].name, dict) else None,
                     "format": editions[i].format,
                     "type": editions[i].type,
                     "direction": editions[i].direction
@@ -176,16 +184,7 @@ async def get_an_ayah_by_multiple_editions(ayah_number: int, edition_identifiers
                 "sajda": results[i].sajda_id if results[i].sajda_id else False
             }
 
-            edition_format = ayah['edition']['format']
-            if edition_format == "audio":
-                # Find the edition with the correct identifier
-                edition = next((item for item in editions if item.identifier == ayah['edition']['identifier']), None)
-                if edition:
-                    bitrates = edition.bitrates
-                    max_bitrate = max(bitrates)
-                    remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
-                    ayah["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, ayah["number"])
-                    ayah["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, ayah["number"])
+            add_ayah_audio(ayah, editions[i], ayah["number"])
 
             data.append(ayah)
 
@@ -209,7 +208,7 @@ async def get_an_ayah_by_surah_number(surah_number: int, ayah_number: int, editi
         
         # If the format is audio, use the narrator-specific text edition
         if edition.format == "audio":
-            text_edition = await get_text_edition_for_narrator(edition.identifier)
+            text_edition = await _text_edition_for_audio(edition)
             if isinstance(text_edition, str):  # Error occurred while fetching text edition
                 return text_edition
             edition_id = text_edition.id
@@ -273,13 +272,7 @@ async def get_an_ayah_by_surah_number(surah_number: int, ayah_number: int, editi
             "sajda": result.sajda_id if result.sajda_id else False
         }
 
-        # If the format is audio, add the audio URLs
-        if edition.format == "audio":
-            bitrates = edition.bitrates
-            max_bitrate = max(bitrates)
-            remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
-            ayah["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, ayah["number"])
-            ayah["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, ayah["number"])
+        add_ayah_audio(ayah, edition, ayah["number"])
 
         return ayah
 
@@ -309,7 +302,7 @@ async def get_an_ayah_by_surah_number_and_multiple_editions(surah_number: int, a
             for edition in editions:
                 edition_id = edition.id
                 if edition.format == "audio":
-                    text_edition = await get_text_edition_for_narrator(edition.identifier)
+                    text_edition = await _text_edition_for_audio(edition)
                     if isinstance(text_edition, str):  # Error occurred while fetching text edition
                         return text_edition
                     edition_id = text_edition.id
@@ -350,8 +343,8 @@ async def get_an_ayah_by_surah_number_and_multiple_editions(surah_number: int, a
                 "edition": {
                     "identifier": editions[i].identifier,
                     "language": editions[i].language,
-                    "name": editions[i].name,
-                    "englishName": editions[i].englishname,
+                    "name": editions[i].name.get("ar") if isinstance(editions[i].name, dict) else None,
+                    "englishName": editions[i].name.get("en") if isinstance(editions[i].name, dict) else None,
                     "format": editions[i].format,
                     "type": editions[i].type,
                     "direction": editions[i].direction
@@ -373,18 +366,7 @@ async def get_an_ayah_by_surah_number_and_multiple_editions(surah_number: int, a
                 "sajda": results[i].sajda_id if results[i].sajda_id else False
             }
 
-            # If the format is audio, add the audio URLs
-            edition_format = ayah['edition']['format']
-            if edition_format == "audio":
-                for item in editions:
-                    if item.identifier == ayah['edition']['identifier']:
-                        edition = item
-                        break
-                bitrates = edition.bitrates
-                max_bitrate = max(bitrates)
-                remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
-                ayah["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, ayah["number"])
-                ayah["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, ayah["number"])
+            add_ayah_audio(ayah, editions[i], ayah["number"])
 
             data.append(ayah)
 

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.models import QuranAyahMatch, QuranAyahMatchSpan, Ayat, Surat, Word
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
 from repositories.narrations_numbering_repo import get_narration_numbering_from_narration
-from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls
+from utils.helpers import add_ayah_audio
 
 
 from db.session import AsyncSessionLocal
@@ -208,12 +208,7 @@ async def get_similar_ayahs_for_ayah(
                 }
 
                 # Add audio fields if response edition is audio
-                if response_edition.format == "audio":
-                    bitrates = response_edition.bitrates
-                    max_bitrate = max(bitrates)
-                    remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
-                    ayah_obj["audio"] = get_ayah_audio_url(max_bitrate, response_edition.identifier, ayah.number)
-                    ayah_obj["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, response_edition.identifier, ayah.number)
+                add_ayah_audio(ayah_obj, response_edition, ayah.number)
 
                 ayah_objs.append(ayah_obj)
     return ayah_objs

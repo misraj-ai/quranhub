@@ -6,7 +6,17 @@ from typing import Optional
 from db.session import AsyncSessionLocal
 from db.models import Edition  # Assuming Edition is in a models module
 from utils.logger import logger  # Assuming you have a logger module
-from utils.config import TAFSIR_BOOKS_LANGUAGES, TAFSIR_BOOKS_LEVELS, DEFAULT_EDITION_IDENTIFIER
+from utils.config import (
+    TAFSIR_BOOKS_LANGUAGES,
+    TAFSIR_BOOKS_LEVELS,
+    DEFAULT_EDITION_IDENTIFIER,
+    AUDIO_TYPE_VERSEBYVERSE,
+    AUDIO_TYPE_SURAH,
+    AUDIO_TYPE_WORDBYWORD,
+    TOTAL_AYAHS,
+    TOTAL_WORDS,
+    WORDBYWORD_MISSING_AUDIO,
+)
 from sqlalchemy.orm import selectinload
 
 async def get_text_edition_for_narrator(narrator_identifier):
@@ -155,6 +165,27 @@ async def get_distinct_audio_edition_by_identifier(edition_identifier: str):
     except Exception as e:
         logger.error(f"An exception occurred in get_distinct_audio_edition_by_identifier: {str(e)}")
         return "not_found"
+
+async def get_word_audio_edition(edition_identifier: Optional[str] = None):
+    """
+    Return the word-by-word audio Edition row, or None.
+
+    With an identifier, the edition must exist and be a word-by-word audio edition;
+    without one, the first available word-by-word audio edition is returned.
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            query = select(Edition).filter(
+                Edition.format == "audio",
+                Edition.type == AUDIO_TYPE_WORDBYWORD,
+            )
+            if edition_identifier:
+                query = query.filter(Edition.identifier == edition_identifier)
+            result = await session.execute(query.order_by(Edition.id).limit(1))
+            return result.scalars().first()
+    except Exception as e:
+        logger.error(f"An exception occurred in get_word_audio_edition: {str(e)}")
+        return None
 
 def _get_recitation_type(englishname: str | None) -> str:
     """Detect recitation type from englishName. Returns 'mujawwad' or 'murattal'."""
@@ -334,7 +365,11 @@ async def get_audio_edition_by_max_bitrate(narration_identifier: str):
                     Edition.name['ar'].as_string().label('name'),
                     Edition.narrator_identifier
                 )
-                .filter(Edition.narrator_identifier == narration_identifier)
+                .filter(
+                    Edition.narrator_identifier == narration_identifier,
+                    Edition.format == "audio",
+                    Edition.type == AUDIO_TYPE_VERSEBYVERSE,
+                )
             )
 
             editions = result.fetchall()
@@ -370,11 +405,12 @@ async def get_distinct_audio_editions_by_englishname():
     """
     try:
         async with AsyncSessionLocal() as session:
-            # Get all audio editions, eager load reciter, order by englishname
+            # Get all audio editions, eager load reciter, order by englishname.
+            # Word-by-word editions are not reciter recitations, so they are excluded here.
             result = await session.execute(
                 select(Edition)
                 .options(selectinload(Edition.reciter))
-                .filter(Edition.format == "audio")
+                .filter(Edition.format == "audio", Edition.type != AUDIO_TYPE_WORDBYWORD)
                 .order_by(Edition.name['en'].as_string())
             )
             editions = result.scalars().all()
@@ -506,12 +542,13 @@ async def get_edition_analysis():
                 # Audio-specific analysis
                 if format_type == "audio":
                     # Count audio files for this edition (per bitrate)
-                    if edition_type in ("surah", "versebyverse"):
-                        num_bitrates = len(edition.bitrates) if edition.bitrates else 0
-                        if edition_type == "surah":
-                            total_audio_files += num_bitrates * 114
-                        elif edition_type == "versebyverse":
-                            total_audio_files += num_bitrates * 6236
+                    num_bitrates = len(edition.bitrates) if edition.bitrates else 0
+                    if edition_type == AUDIO_TYPE_SURAH:
+                        total_audio_files += num_bitrates * 114
+                    elif edition_type == AUDIO_TYPE_VERSEBYVERSE:
+                        total_audio_files += num_bitrates * TOTAL_AYAHS
+                    elif edition_type == AUDIO_TYPE_WORDBYWORD:
+                        total_audio_files += num_bitrates * (TOTAL_WORDS - len(WORDBYWORD_MISSING_AUDIO))
 
                     # Audio by language
                     if language not in analysis["audioAnalysis"]["byLanguage"]:
@@ -570,7 +607,7 @@ async def get_edition_analysis():
             # Reciter analysis - simplified
             analysis["reciters"]["totalUniqueReciters"] = len(reciter_counts)
 
-            # Calculate total audio files: sum of (num_bitrates * 114) for surah, (num_bitrates * 6236) for versebyverse
+            # Total audio files: bitrates * 114 (surah), * 6236 (versebyverse), * words with audio (wordbyword)
             analysis["overview"]["totalAudioFiles"] = total_audio_files
 
             # Bitrate analysis

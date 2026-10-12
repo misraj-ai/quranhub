@@ -6,7 +6,7 @@ from sqlalchemy.future import select
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
 from repositories.narrations_numbering_repo import get_narration_numbering_from_narration
 from utils.config import DEFAULT_EDITION_IDENTIFIER
-from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls
+from utils.helpers import add_ayah_audio
 
 async def get_mutashabihat_for_ayah(
     surah_number: int,
@@ -156,12 +156,7 @@ async def get_mutashabihat_for_ayah(
                 }
 
                 # Add audio fields if response edition is audio
-                if response_edition.format == "audio":
-                    bitrates = response_edition.bitrates
-                    max_bitrate = max(bitrates)
-                    remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
-                    ayah_result["audio"] = get_ayah_audio_url(max_bitrate, response_edition.identifier, ayat.number)
-                    ayah_result["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, response_edition.identifier, ayat.number)
+                add_ayah_audio(ayah_result, response_edition, ayat.number)
 
                 ayah_results.append(ayah_result)
     return ayah_results

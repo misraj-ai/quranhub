@@ -31,6 +31,7 @@ from routers.mushaf_layout.mushaf_layout_router import mushaf_layout_router
 from routers.morphology.morphology_router import morphology_router
 from contextlib import asynccontextmanager
 from utils.audio_duration_loader import load_audio_durations, get_audio_duration_stats
+from utils.word_numbering import load_word_offsets
 
 
 tags_metadata = [
@@ -48,7 +49,7 @@ tags_metadata = [
     {"name": "Surah", "description": "Get a Surah of the Quran - The Quran has 114 Surahs. You can get a list of all of them or all the ayahs for a particular surah using the endpoints below."},
     {"name": "Juz", "description": "Get a Juz of the Quran - The Quran has 30 Juz. You can get the text for each Juz using the endpoints below."},
     {"name": "Quran", "description": "Get a complete Quran edition - NOTE that audio and text edition responses differ. See examples for the response."},
-    {"name": "Word", "description": "Get word-level resources such as tajweed rules, line numbers, and per-word images by location (surah:ayah:position)."},
+    {"name": "Word", "description": "Get word-level resources such as tajweed rules, line numbers, per-word images, and per-word audio by location (surah:ayah:position)."},
     {"name": "Ayah Theme", "description": "Core themes and topics of each ayah in the Quran."},
     {"name": "Mutashabihat", "description": "Similarities in meaning, context, or wording among ayah phrases in the Quran."},
     {"name": "Similar Ayah", "description": "Ayahs from the Quran that share similarities in meaning, context, or wording. This data allows you to explore and access Ayahs that closely align with each other."},
@@ -68,6 +69,9 @@ async def lifespan(app: FastAPI):
         logger.info(f"Audio durations loaded: {stats['totalDurations']} entries")
     else:
         logger.warning("Audio durations not loaded - will use fallback calculation")
+
+    # Startup: Load global word numbering (needed for per-word audio URLs)
+    await load_word_offsets()
 
     yield
 

@@ -108,7 +108,7 @@ async def get_all_pages_metadata_by_edition(
 )
 async def get_page_by_number(
     pageNumber: int = Path(..., ge=1, le=10000, description="Page number (1-604 for Hafs, variable for other layouts)"),
-    words: bool = Query(False, description="Include word breakdowns for each ayah."),
+    words: bool = Query(False, description="Include word breakdowns for each ayah. For word-by-word audio editions, each word also carries audio URLs."),
     tajweed: bool = Query(False, description="Include tajweed rules for each word (requires words=True)."),
     tajweedLevel: str = Query("basic", description="Tajweed rules level ('basic' or 'advanced'). 'basic' filters for common rules, 'advanced' returns all. Use camelCase `tajweedLevel`.", regex="^(basic|advanced)$"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
@@ -175,7 +175,7 @@ async def get_page_by_number(
 async def get_page_by_edition(
     pageNumber: int = Path(..., ge=1, le=10000, description="Page number (1-604 for Hafs, variable for other layouts)"),
     editionIdentifier: str = Path(..., description="Edition identifier (e.g., 'quran-uthmani')", example="quran-uthmani"),
-    words: bool = Query(False, description="Include word breakdowns for each ayah."),
+    words: bool = Query(False, description="Include word breakdowns for each ayah. For word-by-word audio editions, each word also carries audio URLs."),
     tajweed: bool = Query(False, description="Include tajweed rules for each word (requires words=True)."),
     tajweedLevel: str = Query("basic", description="Tajweed rules level ('basic' or 'advanced'). 'basic' filters for common rules, 'advanced' returns all. Use camelCase `tajweedLevel`.", regex="^(basic|advanced)$"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),

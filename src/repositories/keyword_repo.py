@@ -15,7 +15,7 @@ from db.session import AsyncSessionLocal
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
 from repositories.narrations_numbering_repo import get_narration_numbering_from_narration
 from utils.config import DEFAULT_EDITION_IDENTIFIER
-from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls
+from utils.helpers import add_ayah_audio, has_ayah_audio
 from utils.logger import logger
 
 
@@ -376,8 +376,8 @@ async def search_ayahs_by_keyword(
                     "edition": {
                         "identifier": target_edition.identifier,
                         "language": target_edition.language,
-                        "name": target_edition.name,
-                        "englishName": target_edition.englishname,
+                        "name": target_edition.name.get("ar") if isinstance(target_edition.name, dict) else None,
+                        "englishName": target_edition.name.get("en") if isinstance(target_edition.name, dict) else None,
                         "format": target_edition.format,
                         "type": target_edition.type,
                         "direction": target_edition.direction
@@ -445,8 +445,8 @@ async def search_ayahs_by_keyword(
                     "edition": {
                         "identifier": target_edition.identifier,
                         "language": target_edition.language,
-                        "name": target_edition.name,
-                        "englishName": target_edition.englishname,
+                        "name": target_edition.name.get("ar") if isinstance(target_edition.name, dict) else None,
+                        "englishName": target_edition.name.get("en") if isinstance(target_edition.name, dict) else None,
                         "format": target_edition.format,
                         "type": target_edition.type,
                         "direction": target_edition.direction
@@ -535,13 +535,9 @@ async def search_ayahs_by_keyword(
                     surah_ids.add(verse.id)
             
             # Add audio URLs if target edition is audio
-            if target_edition.format == "audio":
-                bitrates = target_edition.bitrates
-                max_bitrate = max(bitrates)
-                remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
+            if has_ayah_audio(target_edition):
                 for ayah in ayahs:
-                    ayah["audio"] = get_ayah_audio_url(max_bitrate, target_edition.identifier, ayah["number"])
-                    ayah["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, target_edition.identifier, ayah["number"])
+                    add_ayah_audio(ayah, target_edition, ayah["number"])
             
             return {
                 "keyword": keyword,
@@ -555,8 +551,8 @@ async def search_ayahs_by_keyword(
                 "edition": {
                     "identifier": target_edition.identifier,
                     "language": target_edition.language,
-                    "name": target_edition.name,
-                    "englishName": target_edition.englishname,
+                    "name": target_edition.name.get("ar") if isinstance(target_edition.name, dict) else None,
+                    "englishName": target_edition.name.get("en") if isinstance(target_edition.name, dict) else None,
                     "format": target_edition.format,
                     "type": target_edition.type,
                     "direction": target_edition.direction

@@ -148,7 +148,7 @@ async def get_the_surah(
     surahNumber: int = Path(..., ge=1, le=114, description="Surah number (1-114)"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
     offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0),
-    words: bool = Query(False, description="Include word breakdowns for each ayah."),
+    words: bool = Query(False, description="Include word breakdowns for each ayah. For word-by-word audio editions, each word also carries audio URLs."),
     includeTimings: bool = Query(False, description="If true, include audio timing information (start, end, duration) for each ayah.", example=False)
 ):
     try:
@@ -211,7 +211,7 @@ async def get_the_surah_by_edition(
     editionIdentifier: str = Path(..., description="Edition identifier (e.g., 'ar.abdulbasitmurattal.hafs') as a required path parameter, not a query parameter.", example="quran-uthmani"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
     offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0),
-    words: bool = Query(False, description="Include word breakdowns for each ayah."),
+    words: bool = Query(False, description="Include word breakdowns for each ayah. For word-by-word audio editions, each word also carries audio URLs."),
     includeTimings: bool = Query(False, description="If true, include audio timing information (start, end, duration) for each ayah.", example=False)
 ):
     try:
@@ -274,7 +274,7 @@ async def get_the_surah_by_editions(
     editionIdentifiers: str = Path(..., description="Comma-separated edition identifiers (e.g., 'quran-uthmani,en.sahih')", example="quran-uthmani,quran-simple-clean"),
     limit: int = Query(None, description="Limit the number of ayahs returned.", example=2000),
     offset: int = Query(None, description="Offset ayahs in a surah by the given number.", example=0),
-    words: bool = Query(False, description="Include word breakdowns for each ayah.")
+    words: bool = Query(False, description="Include word breakdowns for each ayah. For word-by-word audio editions, each word also carries audio URLs.")
 ):
     try:
         if surahNumber < 1 or surahNumber > 114:

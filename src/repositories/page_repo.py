@@ -1,6 +1,6 @@
 from sqlalchemy.future import select
 from sqlalchemy import tuple_
-from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls
+from utils.helpers import add_ayah_audio, has_ayah_audio, has_word_audio
 from db.models import Ayat, Surat
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
 from repositories.hizb_repo import get_hizb_numbers
@@ -22,6 +22,8 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                 edition = edition[1]
 
         edition_id = edition.id
+        # Word-by-word audio editions attach per-word audio URLs to the words breakdown
+        word_audio_edition = edition if has_word_audio(edition) else None
         if edition.format == "audio":
             # Get text edition for the same narrator_identifier
             if edition.narrator_identifier:
@@ -167,7 +169,8 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                                 is_narration=True,
                                 include_tajweed=tajweed,
                                 tajweed_level=tajweed_level,
-                                line_map=line_map
+                                line_map=line_map,
+                                audio_edition=word_audio_edition,
                             )
                         else:
                             extra_words = await get_words(
@@ -243,7 +246,8 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
                         is_narration=True,
                         include_tajweed=tajweed,
                         tajweed_level=tajweed_level,
-                        line_map=line_map
+                        line_map=line_map,
+                        audio_edition=word_audio_edition,
                     )
                 else:
                     ayah_words = await get_words(
@@ -283,14 +287,9 @@ async def get_page(page_number: int, edition_identifier: str, words: bool, limit
             else:
                 surahs_ayat_counter[item.id] += 1
 
-        if edition.format == "audio":
-            bitrates = edition.bitrates
-            max_bitrate = max(bitrates)
-            remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
+        if has_ayah_audio(edition):
             for item in ayahs:
-                verse_number = item["number"]
-                item["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, verse_number)
-                item["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, verse_number)
+                add_ayah_audio(item, edition, item["number"])
 
         # Always return ayahs ordered ascending by global ayah number.
         ayahs.sort(key=lambda x: x["number"])

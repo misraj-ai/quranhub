@@ -34,6 +34,25 @@ BASIC_TAJWEED_RULES = {
 
 BUNNY_URL="https://quranhub.b-cdn.net/quran"
 
+# Audio edition types. Only verse-by-verse editions carry per-ayah audio URLs;
+# word-by-word editions carry per-word audio URLs instead.
+AUDIO_TYPE_VERSEBYVERSE = "versebyverse"
+AUDIO_TYPE_SURAH = "surah"
+AUDIO_TYPE_WORDBYWORD = "wordbyword"
+
+TOTAL_AYAHS = 6236
+TOTAL_WORDS = 77432
+
+# Word locations (surah:ayah:position) with no source audio on Quran.com,
+# verified by requesting every file on 2026-10-12. These return audio=null.
+WORDBYWORD_MISSING_AUDIO = frozenset({
+    "8:66:2", "12:8:15", "18:49:20", "18:54:7", "60:2:7", "79:1:2", "98:7:1",
+})
+
+# The quran-hafs text splits "إِلۡ يَاسِينَ" (37:130) into two tokens, but the word
+# table and the audio have it as one word, so token 4 plays the word-3 clip.
+WORDBYWORD_POSITION_ALIASES = {"37:130:4": "37:130:3"}
+
 DB_USERNAME = os.environ.get('DB_USERNAME')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_HOST = os.environ.get('DB_HOST')

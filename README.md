@@ -35,10 +35,11 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 <td>
 
 **Content Coverage**
-- 📚 **+433** Total Editions  
+- 📚 **+434** Total Editions  
 - 📝 **+345** Text Editions  
-- 🔊 **+88** Audio Editions  
-- 📊 **+354,346** Audio Files  
+- 🔊 **+89** Audio Editions  
+- 📊 **+509,196** Audio Files  
+- 🎧 **+77,425** Word-by-Word Audio Clips (×2 bitrates)  
 - 🧠 **+77,433** Quranic Words Analyzed  
 - 🏷️ **+2,468** Unique Morphological Tags  
 - 🌿 **+1,805** Arabic Roots  
@@ -54,6 +55,7 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 - 🎤 **+45** Surah Recitations
 - 📤 **+13** Quran Scripts
 - 📿 **+43** Verse-by-Verse
+- 🎧 **1** Word-by-Word Audio
 - 🗣️ **+8** Narrations
 
 </td>
@@ -161,6 +163,23 @@ Access audio recitations and reciter information.
 | `get_distinct_audio_editions` | List unique audio reciters | - |
 | `get_all_narrator_identifiers` | Get all reciter identifiers | - |
 | `get_audio_editions_by_narrator` | Audio by specific reciter | `"quran-warsh"` |
+| `get_word_audio` | Per-word pronunciation audio (word-by-word edition) | `"1:1:2"` or `"1:1"` |
+
+#### 🎧 Word-by-Word Audio
+
+The `ar.wordbyword.hafs` edition (`format: audio`, `type: wordbyword`) provides a pronunciation clip for every word of the Quran in the Hafs narration (source: Quran.com / Quran Foundation).
+
+- **Per-word lookup**: `GET /v1/word/audio?location=1:1:2` (single word) or `GET /v1/word/audio?location=1:1` (whole ayah).
+- **In context**: `GET /v1/surah/1/ar.wordbyword.hafs?words=true` or `GET /v1/page/1/ar.wordbyword.hafs?words=true` — each word carries `number`, `audio` and `audioSecondary`.
+- **Global word number**: every word has a `number` from 1 to 77,432 (its rank in surah → ayah → position order, the word-level analogue of the global ayah number). Files are keyed by it, mirroring the verse-by-verse convention:
+  `https://quranhub.b-cdn.net/quran/audio/wordbyword/{bitrate}/ar.wordbyword.hafs/{number}.mp3` (bitrates 128 and 64 kbps).
+- 7 words have no recording at the source and return `"audio": null`.
+
+```bash
+curl "https://api.quranhub.com/v1/word/audio?location=1:1:2"
+# {"location":"1:1:2","text":"ٱللَّهِ","number":2,
+#  "audio":"https://quranhub.b-cdn.net/quran/audio/wordbyword/128/ar.wordbyword.hafs/2.mp3", ...}
+```
 
 ### 📖 Special Features
 Advanced features for studying and understanding the Quran.

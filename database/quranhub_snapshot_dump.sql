@@ -3561,6 +3561,7 @@ INSERT INTO quranhub_schema.edition VALUES (306, 'ar.biqai', 'ar', 'text', 'tafs
 INSERT INTO quranhub_schema.edition VALUES (438, 'ar.maani', 'ar', 'text', 'tafsir', NULL, 'surahquran.com', '2026-04-27', 'rtl', NULL, NULL, NULL, '{"ar": "معاني الكلمات", "en": "Word Meanings", "es": "Significados de las palabras", "id": "Makna Kata-kata", "tr": "Kelime Anlamları", "ur": "معانی کلمات"}', 'tafsir');
 INSERT INTO quranhub_schema.edition VALUES (59, 'tr.transliteration', 'tr', 'text', 'transliteration', NULL, 'Tanzil.net', '2016-02-07', 'ltr', NULL, NULL, NULL, '{"ar": "Çeviriyazı", "en": "Muhammet Abay", "es": null, "id": null, "tr": null, "ur": null}', 'transliteration');
 INSERT INTO quranhub_schema.edition VALUES (74, 'en.transliteration', 'en', 'text', 'transliteration', NULL, 'quran411.com', '2016-02-29', 'ltr', NULL, NULL, NULL, '{"ar": "Transliteration", "en": "English Transliteration", "es": null, "id": null, "tr": null, "ur": null}', 'transliteration');
+INSERT INTO quranhub_schema.edition VALUES (439, 'ar.wordbyword.hafs', 'ar', 'audio', 'wordbyword', '{128,64}', 'quran.com', '2026-10-12', 'rtl', 'quran-hafs', 35, NULL, '{"ar": "تلاوة كلمة بكلمة", "en": "Word by Word Recitation", "es": "Recitación palabra por palabra", "id": "Bacaan Kata per Kata", "tr": "Kelime Kelime Tilavet", "ur": "لفظ بہ لفظ تلاوت"}', 'recitation');
 
 
 --
@@ -15567,6 +15568,7 @@ INSERT INTO quranhub_schema.reciter VALUES (18, 'Saood bin Ibraaheem Ash-Shuraym
 INSERT INTO quranhub_schema.reciter VALUES (14, 'Shamshad Ali Khan', '{"ar": "شمشاد علي خان: قارئ باكستاني متميز معروف بإتقانه لأساليب التلاوة التقليدية في جنوب آسيا وأدائه المؤثر للآيات القرآنية.", "en": "Shamshad Ali Khan: Distinguished Pakistani reciter known for his mastery of traditional South Asian recitation styles and impactful delivery of Quranic verses."}', 'https://quranhub.b-cdn.net/quran/images/reciters/shamshad-ali-khan.jpeg');
 INSERT INTO quranhub_schema.reciter VALUES (24, 'Waleed Alnaehy', '{"ar": "وليد النائحي: قارئ متميز معروف بوضوح نطقه والعمق العاطفي في تلاوته القرآنية، يلامس القلوب بأدائه الصادق.", "en": "Waleed Al-Naehi: Distinguished reciter known for his clear articulation and emotional depth in Quranic recitation, touching hearts with his sincere delivery."}', 'https://quranhub.b-cdn.net/quran/images/reciters/waleed-alnaehy.jpeg');
 INSERT INTO quranhub_schema.reciter VALUES (9, 'Yassin Al Jazairi', '{"ar": "ياسين الجزائري: قارئ جزائري متميز معروف بصوته الجميل وإتقانه لتقاليد التلاوة في شمال إفريقيا، ملهم للمستمعين بأدائه الصادق من القلب.", "en": "Yassin Al-Jazairi: Distinguished Algerian reciter known for his beautiful voice and mastery of North African recitation traditions, inspiring listeners with his heartfelt performances."}', 'https://quranhub.b-cdn.net/quran/images/reciters/yassin-al-jazairi.jpeg');
+INSERT INTO quranhub_schema.reciter VALUES (35, 'Word by Word (Quran.com)', '{"ar": "تسجيلات صوتية لنطق كل كلمة من كلمات القرآن الكريم برواية حفص. المصدر: Quran.com (مؤسسة القرآن).", "en": "Word-by-word pronunciation audio for every word of the Quran, Hafs narration. Source: Quran.com (Quran Foundation)."}', NULL);
 
 
 --

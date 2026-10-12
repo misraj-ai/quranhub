@@ -4,7 +4,7 @@ from db.session import AsyncSessionLocal
 from utils.logger import logger
 from repositories.edition_repo import get_edition_by_identifier, get_text_edition_for_narrator
 from utils.config import DEFAULT_EDITION_IDENTIFIER
-from utils.helpers import get_ayah_audio_url, get_ayah_audio_secondary_urls
+from utils.helpers import add_ayah_audio, has_ayah_audio
 
 async def get_manzil(manzil_number: int, edition_identifier: str, limit: int, offset: int):
     try:
@@ -92,13 +92,9 @@ async def get_manzil(manzil_number: int, edition_identifier: str, limit: int, of
                 surah_ids.append(item.id)
 
         # Add audio URLs if the edition is audio format
-        if edition.format == "audio":
-            bitrates = edition.bitrates
-            max_bitrate = max(bitrates)
-            remaining_bitrates = [bitrate for bitrate in bitrates if bitrate != max_bitrate]
+        if has_ayah_audio(edition):
             for item in ayahs:
-                item["audio"] = get_ayah_audio_url(max_bitrate, edition.identifier, item["number"])
-                item["audioSecondary"] = get_ayah_audio_secondary_urls(remaining_bitrates, edition.identifier, item["number"])
+                add_ayah_audio(item, edition, item["number"])
 
         # Prepare edition info
         edition_info = {

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.models import Word
 from utils.logger import logger
 from utils.config import SPECIAL_CHARACTERS, NUMBERS_TRANSLATION_TABLE, BASIC_TAJWEED_RULES
+from utils.helpers import add_word_audio
 from typing import List, Dict, Optional, Tuple
 from repositories.narrations_numbering_repo import get_hafs_verse_for_narration_verse
 
@@ -320,9 +321,14 @@ async def get_words(
     is_narration: bool = False,
     include_tajweed: bool = False,
     tajweed_level: str = "basic",
-    line_map: Dict[int, int] = None
+    line_map: Dict[int, int] = None,
+    audio_edition=None,
 ) -> List[Dict]:
-    """Get words with line numbers and optional tajweed for any edition."""
+    """Get words with line numbers and optional tajweed for any edition.
+
+    When `audio_edition` is a word-by-word audio edition, each word also gets
+    `number` (global word number) and `audio`/`audioSecondary` URLs.
+    """
     try:
         ayah_text_list = ayah_text.strip().split()
         words_list = []
@@ -355,10 +361,11 @@ async def get_words(
                     }
                     if include_tajweed:
                         word_data["tajweed"] = md.get("tajweed")
-                    
+                    add_word_audio(word_data, audio_edition, surah_number, ayah_number, index + 1)
+
                     words_list.append(word_data)
                     index += 1
-                    
+
 
             else:
                 hafs_verses = await get_hafs_verse_for_narration_verse(
@@ -434,6 +441,7 @@ async def get_words(
                     }
                     if include_tajweed:
                         word_data["tajweed"] = md.get("tajweed")
+                    add_word_audio(word_data, audio_edition, surah_number, ayah_number, index + 1)
 
                     words_list.append(word_data)
                     index += 1

@@ -1,14 +1,17 @@
 
+from typing import Optional
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from utils.helpers import add_cache_headers
+from utils.helpers import add_cache_headers, add_word_audio
 from sqlalchemy import select
 from db.session import AsyncSessionLocal
 from db.models import Word
+from repositories import edition_repo
 from .word_docs import (
     get_word_tajweed_response,
     get_word_line_number_response,
-    get_word_image_response
+    get_word_image_response,
+    get_word_audio_response,
 )
 from utils.logger import logger
 from utils.config import BASIC_TAJWEED_RULES
@@ -280,3 +283,97 @@ async def get_word_image(
         )
         response.headers["Cache-Control"] = "no-store"
         return response
+
+
+def _no_store(response: JSONResponse) -> JSONResponse:
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@word_router.get(
+    "/audio",
+    responses=get_word_audio_response,
+    tags=["Word"],
+    name="Get Word Audio by Location",
+    summary="Get per-word audio URLs by location",
+    description=(
+        "Returns per-word audio URLs from a word-by-word audio edition, for a specific word "
+        "(surah:ayah:position) or for every word in an ayah (surah:ayah). Positions follow the Hafs word "
+        "breakdown. The `audio` field is the highest-bitrate MP3 and `audioSecondary` lists lower bitrates; "
+        "`audio` is null for the few words that have no recording."
+    ),
+    openapi_extra={
+        "x-agent-hints": "Call this endpoint with a word location (surah:ayah:position) or an ayah (surah:ayah) to get MP3 URLs for pronouncing individual Quranic words, e.g. for tap-to-hear word features.",
+        "x-mcp-example": {
+            "name": "get_word_audio_v1_word_audio_get",
+            "arguments": {"location": "1:1:2"}
+        }
+    }
+)
+async def get_word_audio(
+    location: str = Query(..., description="Location in the format surah:ayah:position or surah:ayah", example="1:1:2"),
+    edition: Optional[str] = Query(None, description="Word-by-word audio edition identifier. Defaults to the first available word-by-word audio edition.", example="ar.wordbyword.hafs"),
+):
+    try:
+        try:
+            parts = [int(part) for part in location.split(":")]
+        except ValueError:
+            parts = []
+        if len(parts) not in (2, 3):
+            return _no_store(JSONResponse(
+                content={"code": 400, "status": "Error", "data": "Invalid location format. Expected surah:ayah or surah:ayah:position"},
+                status_code=400
+            ))
+
+        audio_edition = await edition_repo.get_word_audio_edition(edition)
+        if audio_edition is None:
+            suffix = f" for identifier '{edition}'" if edition else ""
+            return _no_store(JSONResponse(
+                content={"code": 404, "status": "Error", "data": f"No word-by-word audio edition found{suffix}"},
+                status_code=404
+            ))
+
+        name = audio_edition.name if isinstance(audio_edition.name, dict) else {}
+        edition_info = {
+            "identifier": audio_edition.identifier,
+            "name": name.get("ar"),
+            "englishName": name.get("en"),
+            "format": audio_edition.format,
+            "type": audio_edition.type,
+            "narratorIdentifier": audio_edition.narrator_identifier,
+        }
+
+        surah, ayah = parts[0], parts[1]
+        async with AsyncSessionLocal() as session:
+            query = select(Word.position, Word.text).filter(
+                Word.surat_id == surah,
+                Word.numberinsurat == ayah,
+            )
+            if len(parts) == 3:
+                query = query.filter(Word.position == parts[2])
+            result = await session.execute(query.order_by(Word.position))
+            rows = result.all()
+
+        if not rows:
+            message = f"Word not found for location {location}" if len(parts) == 3 else f"No words found for ayah {location}"
+            return _no_store(JSONResponse(content={"code": 404, "status": "Error", "data": message}, status_code=404))
+
+        if len(parts) == 3:
+            row = rows[0]
+            data = {"location": location, "text": row.text}
+            add_word_audio(data, audio_edition, surah, ayah, row.position)
+            data["edition"] = edition_info
+        else:
+            words = []
+            for row in rows:
+                word = {"position": row.position, "location": f"{surah}:{ayah}:{row.position}", "text": row.text}
+                add_word_audio(word, audio_edition, surah, ayah, row.position)
+                words.append(word)
+            data = {"location": location, "edition": edition_info, "words": words}
+
+        response = JSONResponse(content={"code": 200, "status": "OK", "data": data}, status_code=200)
+        add_cache_headers(response, cache_tag=f"word:audio:{location}:{audio_edition.identifier}")
+        return response
+    except Exception as e:
+        logger.error(f"Error in get_word_audio: {e}", exc_info=True)
+        return _no_store(JSONResponse(content={"code": 500, "status": "Error", "data": str(e)}, status_code=500))
