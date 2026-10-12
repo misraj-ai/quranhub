@@ -167,7 +167,7 @@ Access audio recitations and reciter information.
 
 #### 🎧 Word-by-Word Audio
 
-The `ar.wordbyword.hafs` edition (`format: audio`, `type: wordbyword`) provides a pronunciation clip for every word of the Quran in the Hafs narration (source: Quran.com / Quran Foundation).
+The `ar.wordbyword.hafs` edition (`format: audio`, `type: wordbyword`) provides a pronunciation clip for every word of the Quran in the Hafs narration.
 
 - **Per-word lookup**: `GET /v1/word/audio?location=1:1:2` (single word) or `GET /v1/word/audio?location=1:1` (whole ayah).
 - **In context**: `GET /v1/surah/1/ar.wordbyword.hafs?words=true` or `GET /v1/page/1/ar.wordbyword.hafs?words=true` — each word carries `number`, `audio` and `audioSecondary`.
