@@ -173,13 +173,6 @@ The `ar.wordbyword.hafs` edition (`format: audio`, `type: wordbyword`) provides 
 - **In context**: `GET /v1/surah/1/ar.wordbyword.hafs?words=true` or `GET /v1/page/1/ar.wordbyword.hafs?words=true` — each word carries `number`, `audio` and `audioSecondary`.
 - **Global word number**: every word has a `number` from 1 to 77,432 (its rank in surah → ayah → position order, the word-level analogue of the global ayah number). Files are keyed by it, mirroring the verse-by-verse convention:
   `https://quranhub.b-cdn.net/quran/audio/wordbyword/{bitrate}/ar.wordbyword.hafs/{number}.mp3` (bitrates 128 and 64 kbps).
-- 7 words have no recording at the source and return `"audio": null`.
-
-```bash
-curl "https://api.quranhub.com/v1/word/audio?location=1:1:2"
-# {"location":"1:1:2","text":"ٱللَّهِ","number":2,
-#  "audio":"https://quranhub.b-cdn.net/quran/audio/wordbyword/128/ar.wordbyword.hafs/2.mp3", ...}
-```
 
 ### 📖 Special Features
 Advanced features for studying and understanding the Quran.
