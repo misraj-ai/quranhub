@@ -209,6 +209,79 @@ def _format_audio_edition(item):
         "recitationType": _get_recitation_type(item_name_dict.get('en')),
     }
 
+def _group_audio_editions_by_identifier(items):
+    """Collapse audio edition rows that share an identifier into one entry per identifier.
+
+    A reciter's identifier may have a `surah` row, a `versebyverse` row, or both.
+    The verse-by-verse row supplies the base fields when present (so existing
+    clients see the same entry as before); every row contributes to `types`,
+    which lists the available file layouts with their bitrates. Word-by-word
+    editions are excluded. Order of first appearance is preserved.
+    """
+    grouped = {}
+    for item in items:
+        if item.type == AUDIO_TYPE_WORDBYWORD:
+            continue
+        entry = grouped.get(item.identifier)
+        if entry is None:
+            entry = {"primary": item, "rows": []}
+            grouped[item.identifier] = entry
+        elif item.type == AUDIO_TYPE_VERSEBYVERSE and entry["primary"].type != AUDIO_TYPE_VERSEBYVERSE:
+            entry["primary"] = item
+        entry["rows"].append(item)
+
+    result = []
+    for entry in grouped.values():
+        formatted = _format_audio_edition(entry["primary"])
+        formatted["types"] = [
+            {"type": row.type, "bitrates": sorted(row.bitrates or [], reverse=True)}
+            for row in sorted(entry["rows"], key=lambda r: 0 if r.type == AUDIO_TYPE_VERSEBYVERSE else 1)
+        ]
+        result.append(formatted)
+    return result
+
+
+async def get_audio_editions_by_narrator(narrator_identifier: str, language=None, sort_by: Optional[str] = None, subtype: Optional[str] = None):
+    """All audio editions of a narration (surah and verse-by-verse), one entry per identifier."""
+    try:
+        async with AsyncSessionLocal() as session:
+            query = (
+                select(Edition)
+                .options(selectinload(Edition.reciter))
+                .filter(
+                    Edition.format == "audio",
+                    Edition.narrator_identifier == narrator_identifier,
+                    Edition.type != AUDIO_TYPE_WORDBYWORD,
+                )
+            )
+            if language:
+                query = query.filter(Edition.language == language)
+            if subtype:
+                query = query.filter(Edition.subtype == subtype)
+
+            sort_field = Edition.name['ar'].as_string()
+            if sort_by == 'en':
+                sort_field = Edition.name['en'].as_string()
+            query = query.order_by(
+                case((Edition.language == 'ar', 0), else_=1),
+                sort_field,
+                Edition.identifier,
+            )
+            result = await session.execute(query)
+            items = result.scalars().all()
+
+        if not items:
+            return "Edition not found"
+        return _group_audio_editions_by_identifier(items)
+
+    except SQLAlchemyError as e:
+        logger.error(f"Database error in get_audio_editions_by_narrator: {str(e)}")
+        return "A database error occurred while fetching audio editions."
+    except Exception as e:
+        logger.error(f"An exception occurred in get_audio_editions_by_narrator: {str(e)}")
+        return "An unexpected error occurred, please try again later."
+
+
 def _format_default_edition(item):
     """Format a single default edition item."""
     item_name_dict = item.name if isinstance(item.name, dict) else {}

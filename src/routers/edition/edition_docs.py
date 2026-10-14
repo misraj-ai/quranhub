@@ -726,21 +726,28 @@ getTheAudioEditionByNarratorIdentifierResponse = {
                             "narratorIdentifier": "quran-warsh",
                             "imageUrl": "https://example.com/reciters/shaatree.jpg",
                             "shortDescription": {"ar": "قارئ مشهور من السعودية برواية ورش"},
-                            "recitationType": "murattal"
+                            "recitationType": "murattal",
+                            "types": [
+                                {"type": "versebyverse", "bitrates": [128, 64]},
+                                {"type": "surah", "bitrates": [128]}
+                            ]
                         },
                         {
-                            "identifier": "ar.warsh.premium",
+                            "identifier": "ar.alkouchi.warsh",
                             "language": "ar",
-                            "name": "قراءة ورش عالية الجودة",
-                            "englishName": "Warsh Premium Quality",
+                            "name": "العيون الكوشي",
+                            "englishName": "Al-Ayoune Al-Kouchi",
                             "format": "audio",
-                            "type": "versebyverse",
+                            "type": "surah",
                             "subtype": "recitation",
-                            "direction": "rtl",
+                            "direction": None,
                             "narratorIdentifier": "quran-warsh",
-                            "imageUrl": "https://example.com/reciters/warsh.jpg",
-                            "shortDescription": {"ar": "تسجيل عالي الجودة برواية ورش عن نافع"},
-                            "recitationType": "murattal"
+                            "imageUrl": "https://quranhub.b-cdn.net/quran/images/reciters/al-ayoune-al-kouchi.jpeg",
+                            "shortDescription": {"ar": "قارئ مغربي بارز متخصص في رواية ورش عن نافع"},
+                            "recitationType": "murattal",
+                            "types": [
+                                {"type": "surah", "bitrates": [64]}
+                            ]
                         }
                     ]
                 }
@@ -831,135 +838,252 @@ getEditionsAnalysisResponse = {
                     "status": "OK",
                     "data": {
                         "overview": {
-                            "totalEditions": 330,
-                            "textEditions": 230,
-                            "audioEditions": 100,
-                            "totalAudioFiles": 625140
+                            "totalEditions": 541,
+                            "textEditions": 343,
+                            "audioEditions": 198,
+                            "totalAudioFiles": 521622
                         },
                         "formats": {
-                            "text": 230,
-                            "audio": 100
+                            "text": 343,
+                            "audio": 198
                         },
                         "types": {
-                            "tafsir": 85,
-                            "translation": 65,
-                            "surah": 55,
-                            "versebyverse": 45,
-                            "quran": 35,
-                            "narration": 25,
-                            "transliteration": 15,
-                            "tajweed": 5
+                            "tafsir": 157,
+                            "surah": 154,
+                            "quran": 12,
+                            "translation": 164,
+                            "versebyverse": 43,
+                            "wordbyword": 1,
+                            "narration": 8,
+                            "transliteration": 2
                         },
                         "languages": {
                             "ar": {
-                                "total": 180,
-                                "textEditions": 120,
-                                "audioEditions": 60,
+                                "total": 262,
+                                "textEditions": 74,
+                                "audioEditions": 188,
                                 "textTypes": {
-                                    "tafsir": 85,
-                                    "quran": 25,
-                                    "narration": 10
+                                    "tafsir": 53,
+                                    "quran": 12,
+                                    "translation": 1,
+                                    "narration": 8
                                 },
                                 "audioTypes": {
-                                    "versebyverse": 35,
-                                    "surah": 25
+                                    "surah": 149,
+                                    "versebyverse": 38,
+                                    "wordbyword": 1
                                 }
                             },
                             "en": {
-                                "total": 65,
-                                "textEditions": 60,
-                                "audioEditions": 5,
+                                "total": 33,
+                                "textEditions": 31,
+                                "audioEditions": 2,
                                 "textTypes": {
-                                    "translation": 55,
-                                    "transliteration": 5
+                                    "tafsir": 15,
+                                    "translation": 15,
+                                    "transliteration": 1
                                 },
                                 "audioTypes": {
-                                    "surah": 3,
-                                    "versebyverse": 2
+                                    "surah": 1,
+                                    "versebyverse": 1
                                 }
                             },
                             "fr": {
-                                "total": 25,
-                                "textEditions": 22,
-                                "audioEditions": 3,
+                                "total": 4,
+                                "textEditions": 2,
+                                "audioEditions": 2,
                                 "textTypes": {
-                                    "translation": 20,
-                                    "tafsir": 2
+                                    "tafsir": 1,
+                                    "translation": 1
                                 },
                                 "audioTypes": {
-                                    "surah": 2,
+                                    "surah": 1,
                                     "versebyverse": 1
                                 }
                             }
                         },
                         "narrations": {
                             "quran-hafs": {
-                                "totalEditions": 65,
+                                "totalEditions": 162,
                                 "textEditions": 1,
-                                "audioEditions": 64
+                                "audioEditions": 162
                             },
-                            "quran-warsh": {
-                                "totalEditions": 35,
+                            "quran-albazzi": {
+                                "totalEditions": 2,
                                 "textEditions": 1,
-                                "audioEditions": 34
+                                "audioEditions": 2
                             },
-                            "quran-qaloon": {
-                                "totalEditions": 25,
+                            "quran-aldouri": {
+                                "totalEditions": 4,
                                 "textEditions": 1,
-                                "audioEditions": 24
+                                "audioEditions": 4
                             },
                             "quran-shoba": {
-                                "totalEditions": 15,
+                                "totalEditions": 4,
+                                "textEditions": 1,
+                                "audioEditions": 4
+                            },
+                            "quran-alsoosi": {
+                                "totalEditions": 2,
+                                "textEditions": 1,
+                                "audioEditions": 2
+                            },
+                            "quran-qunbul": {
+                                "totalEditions": 2,
+                                "textEditions": 1,
+                                "audioEditions": 2
+                            },
+                            "quran-warsh": {
+                                "totalEditions": 14,
                                 "textEditions": 1,
                                 "audioEditions": 14
+                            },
+                            "quran-qaloon": {
+                                "totalEditions": 8,
+                                "textEditions": 1,
+                                "audioEditions": 8
                             }
                         },
                         "reciters": {
-                            "totalUniqueReciters": 42
+                            "totalUniqueReciters": 141
                         },
                         "audioAnalysis": {
                             "byLanguage": {
                                 "ar": {
-                                    "editionCount": 85,
+                                    "editionCount": 188,
                                     "types": {
-                                        "versebyverse": 45,
-                                        "surah": 40
+                                        "surah": 149,
+                                        "versebyverse": 38,
+                                        "wordbyword": 1
                                     },
                                     "uniqueNarrationsCount": 8
                                 },
                                 "en": {
-                                    "editionCount": 8,
+                                    "editionCount": 2,
                                     "types": {
-                                        "surah": 5,
-                                        "versebyverse": 3
+                                        "surah": 1,
+                                        "versebyverse": 1
                                     },
-                                    "uniqueNarrationsCount": 2
+                                    "uniqueNarrationsCount": 1
+                                },
+                                "fa": {
+                                    "editionCount": 2,
+                                    "types": {
+                                        "surah": 1,
+                                        "versebyverse": 1
+                                    },
+                                    "uniqueNarrationsCount": 1
+                                },
+                                "ur": {
+                                    "editionCount": 2,
+                                    "types": {
+                                        "surah": 1,
+                                        "versebyverse": 1
+                                    },
+                                    "uniqueNarrationsCount": 1
+                                },
+                                "zh": {
+                                    "editionCount": 2,
+                                    "types": {
+                                        "surah": 1,
+                                        "versebyverse": 1
+                                    },
+                                    "uniqueNarrationsCount": 1
+                                },
+                                "fr": {
+                                    "editionCount": 2,
+                                    "types": {
+                                        "surah": 1,
+                                        "versebyverse": 1
+                                    },
+                                    "uniqueNarrationsCount": 1
                                 }
                             },
                             "byNarration": {
                                 "quran-hafs": {
-                                    "editionCount": 50,
-                                    "languageCount": 5,
+                                    "editionCount": 162,
                                     "types": {
-                                        "versebyverse": 30,
-                                        "surah": 20
-                                    }
+                                        "surah": 136,
+                                        "versebyverse": 25,
+                                        "wordbyword": 1
+                                    },
+                                    "languageCount": 6
+                                },
+                                "quran-albazzi": {
+                                    "editionCount": 2,
+                                    "types": {
+                                        "surah": 1,
+                                        "versebyverse": 1
+                                    },
+                                    "languageCount": 1
+                                },
+                                "quran-aldouri": {
+                                    "editionCount": 4,
+                                    "types": {
+                                        "surah": 2,
+                                        "versebyverse": 2
+                                    },
+                                    "languageCount": 1
+                                },
+                                "quran-shoba": {
+                                    "editionCount": 4,
+                                    "types": {
+                                        "surah": 2,
+                                        "versebyverse": 2
+                                    },
+                                    "languageCount": 1
+                                },
+                                "quran-alsoosi": {
+                                    "editionCount": 2,
+                                    "types": {
+                                        "surah": 1,
+                                        "versebyverse": 1
+                                    },
+                                    "languageCount": 1
+                                },
+                                "quran-qunbul": {
+                                    "editionCount": 2,
+                                    "types": {
+                                        "surah": 1,
+                                        "versebyverse": 1
+                                    },
+                                    "languageCount": 1
                                 },
                                 "quran-warsh": {
-                                    "editionCount": 25,
-                                    "languageCount": 2,
+                                    "editionCount": 14,
                                     "types": {
-                                        "versebyverse": 15,
-                                        "surah": 10
-                                    }
+                                        "surah": 7,
+                                        "versebyverse": 7
+                                    },
+                                    "languageCount": 1
+                                },
+                                "quran-qaloon": {
+                                    "editionCount": 8,
+                                    "types": {
+                                        "surah": 4,
+                                        "versebyverse": 4
+                                    },
+                                    "languageCount": 1
                                 }
                             },
                             "bitrates": {
-                                "uniqueBitrates": 6,
-                                "availableBitrates": [32, 64, 96, 128, 192, 320],
+                                "uniqueBitrates": 11,
+                                "availableBitrates": [
+                                    16,
+                                    32,
+                                    40,
+                                    48,
+                                    64,
+                                    96,
+                                    128,
+                                    160,
+                                    192,
+                                    256,
+                                    320
+                                ],
                                 "statistics": {
-                                    "average": 108.5,
-                                    "minimum": 32,
+                                    "average": 119.21,
+                                    "minimum": 16,
                                     "maximum": 320
                                 }
                             }

@@ -597,7 +597,7 @@ async def get_edition_narrator_identifiers():
     tags=["Edition"],
     name="Get All Available Audio Editions by Narrator Identifier",
     summary="List all audio editions by narrator identifier",
-    description="Lists all available audio editions for a given narrator. Use this to discover audio resources for a specific reciter for playback or download.",
+    description="Lists all available audio editions for a given narrator, one entry per edition identifier. Each entry carries `types`: the file layouts available for that identifier (`versebyverse` per-ayah files and/or `surah` whole-surah files) with their bitrates. Surah-only reciters are included with a single `surah` type. Use this to discover audio resources for a specific narration for playback or download.",
     openapi_extra={
         "x-agent-hints": "Call this endpoint to list all audio editions for a specific narrator. Use the narrator identifier to filter editions and use the results for playback or download.",
         "x-mcp-example": {
@@ -613,13 +613,11 @@ async def get_audio_edition_by_narrator_identifier(
     subtype: Optional[str] = Query(None, description="Filter by subtype (e.g. 'recitation')")
 ):
     try:
-        data = await edition_repo.get_edition(
-            format="audio", 
-            narrator=narratorIdentifier, 
-            type="versebyverse", 
+        data = await edition_repo.get_audio_editions_by_narrator(
+            narratorIdentifier,
             language=language,
             sort_by=sortBy,
-            subtype=subtype
+            subtype=subtype,
         )
         if isinstance(data, str):
             response = JSONResponse(
