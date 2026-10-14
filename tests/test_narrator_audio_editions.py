@@ -15,7 +15,7 @@ from repositories.edition_repo import _group_audio_editions_by_identifier
 
 
 def row(identifier, type_, bitrates, en="Reciter"):
-    reciter = SimpleNamespace(image_url=f"https://cdn/{identifier}.jpeg", short_description={"ar": "..", "en": ".."})
+    reciter = SimpleNamespace(image_url=f"https://cdn/{identifier}.jpeg", short_description={"ar": "..", "en": ".."}, nationality=None)
     return SimpleNamespace(
         identifier=identifier, language="ar", format="audio", type=type_, subtype="recitation",
         bitrates=bitrates, direction=None, narrator_identifier="quran-hafs",

@@ -452,7 +452,7 @@ async def get_edition_by_format_and_type(
     tags=["Edition"],
     name="Get Distinct Audio Editions by English Name",
     summary="List distinct audio editions by English name",
-    description="Returns a list of distinct audio editions using englishName. Use this to discover unique audio recitations for further queries or display.",
+    description="Returns a list of distinct audio editions using englishName. Use this to discover unique audio recitations for further queries or display. Each reciter object includes `imageUrl`, `shortDescription` and `nationality` (`{code, en, ar}`, null when not confirmed).",
     openapi_extra={
         "x-agent-hints": "Call this endpoint to get a list of unique audio recitations by English name. Use the results to select reciters for audio playback or download.",
         "x-mcp-example": {
@@ -482,7 +482,7 @@ async def get_distinct_audio_editions():
     "/audio/edition/{editionIdentifier}",
     tags=["Edition"],
     summary="Get distinct audio edition by edition identifier",
-    description="Given an audio edition identifier, returns the same object shape as the distinct audio editions endpoint, but for a single edition. Returns 404 if not found or not an audio edition.",
+    description="Given an audio edition identifier, returns the same object shape as the distinct audio editions endpoint, but for a single edition. Returns 404 if not found or not an audio edition. Each reciter object includes `imageUrl`, `shortDescription` and `nationality` (`{code, en, ar}`, null when not confirmed).",
     openapi_extra={
         "x-agent-hints": "Call this endpoint to get a distinct audio edition object for a specific audio edition identifier.",
         "x-mcp-example": {"editionIdentifier": "ar.abdulbasitmurattal.hafs"}
@@ -597,7 +597,7 @@ async def get_edition_narrator_identifiers():
     tags=["Edition"],
     name="Get All Available Audio Editions by Narrator Identifier",
     summary="List all audio editions by narrator identifier",
-    description="Lists all available audio editions for a given narrator, one entry per edition identifier. Each entry carries `types`: the file layouts available for that identifier (`versebyverse` per-ayah files and/or `surah` whole-surah files) with their bitrates. Surah-only reciters are included with a single `surah` type. Use this to discover audio resources for a specific narration for playback or download.",
+    description="Lists all available audio editions for a given narrator, one entry per edition identifier. Each entry carries `types`: the file layouts available for that identifier (`versebyverse` per-ayah files and/or `surah` whole-surah files) with their bitrates. Surah-only reciters are included with a single `surah` type. Use this to discover audio resources for a specific narration for playback or download. Each reciter object includes `imageUrl`, `shortDescription` and `nationality` (`{code, en, ar}`, null when not confirmed).",
     openapi_extra={
         "x-agent-hints": "Call this endpoint to list all audio editions for a specific narrator. Use the narrator identifier to filter editions and use the results for playback or download.",
         "x-mcp-example": {

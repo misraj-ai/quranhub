@@ -214,7 +214,8 @@ getTheEditionByLanguageResponse = {
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/shaatree.jpg",
-                                    "shortDescription": {"ar": "قارئ مشهور من السعودية"}
+                                    "shortDescription": {"ar": "قارئ مشهور من السعودية"},
+                                    "nationality": {"code": "SA", "en": "Saudi Arabia", "ar": "السعودية"}
                                 },
                                 {
                                     "identifier": "ar.mukhtasar",
@@ -368,7 +369,8 @@ getTheEditionByTypeResponse = {
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/shaatree.jpg",
-                                    "shortDescription": {"ar": "قارئ مشهور من السعودية"}
+                                    "shortDescription": {"ar": "قارئ مشهور من السعودية"},
+                                    "nationality": {"code": "SA", "en": "Saudi Arabia", "ar": "السعودية"}
                                 },
                                 {
                                     "identifier": "ar.ahmedajamy.hafs",
@@ -381,7 +383,8 @@ getTheEditionByTypeResponse = {
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/ajamy.jpg",
-                                    "shortDescription": {"ar": "إمام وخطيب الحرم المكي"}
+                                    "shortDescription": {"ar": "إمام وخطيب الحرم المكي"},
+                                    "nationality": {"code": "SA", "en": "Saudi Arabia", "ar": "السعودية"}
                                 }
                             ]
                         }
@@ -552,7 +555,8 @@ getTheEditionByFormatResponse = {
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/shaatree.jpg",
-                                    "shortDescription": {"ar": "قارئ مشهور من السعودية"}
+                                    "shortDescription": {"ar": "قارئ مشهور من السعودية"},
+                                    "nationality": {"code": "SA", "en": "Saudi Arabia", "ar": "السعودية"}
                                 },
                                 {
                                     "identifier": "ar.ahmedajamy.hafs",
@@ -565,7 +569,8 @@ getTheEditionByFormatResponse = {
                                     "direction": "rtl",
                                     "narratorIdentifier": "quran-hafs",
                                     "imageUrl": "https://example.com/reciters/ajamy.jpg",
-                                    "shortDescription": {"ar": "إمام وخطيب الحرم المكي"}
+                                    "shortDescription": {"ar": "إمام وخطيب الحرم المكي"},
+                                    "nationality": {"code": "SA", "en": "Saudi Arabia", "ar": "السعودية"}
                                 }
                             ]
                         }
@@ -726,6 +731,7 @@ getTheAudioEditionByNarratorIdentifierResponse = {
                             "narratorIdentifier": "quran-warsh",
                             "imageUrl": "https://example.com/reciters/shaatree.jpg",
                             "shortDescription": {"ar": "قارئ مشهور من السعودية برواية ورش"},
+                            "nationality": {"code": "SA", "en": "Saudi Arabia", "ar": "السعودية"},
                             "recitationType": "murattal",
                             "types": [
                                 {"type": "versebyverse", "bitrates": [128, 64]},
@@ -744,6 +750,7 @@ getTheAudioEditionByNarratorIdentifierResponse = {
                             "narratorIdentifier": "quran-warsh",
                             "imageUrl": "https://quranhub.b-cdn.net/quran/images/reciters/al-ayoune-al-kouchi.jpeg",
                             "shortDescription": {"ar": "قارئ مغربي بارز متخصص في رواية ورش عن نافع"},
+                            "nationality": {"code": "MA", "en": "Morocco", "ar": "المغرب"},
                             "recitationType": "murattal",
                             "types": [
                                 {"type": "surah", "bitrates": [64]}

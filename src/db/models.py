@@ -79,6 +79,8 @@ class Reciter(Base):
     englishname = Column(String(255), nullable=False)
     short_description = Column(JSONB, nullable=True)
     image_url = Column(String(1000), nullable=True)
+    # {"code": "SA", "en": "Saudi Arabia", "ar": "السعودية"}; NULL when not confirmed
+    nationality = Column(JSONB, nullable=True)
 
     # Reverse relationship
     editions = relationship("Edition", back_populates="reciter")
