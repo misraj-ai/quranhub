@@ -191,27 +191,6 @@ curl "https://api.quranhub.com/v1/edition/audio/nationality/KW"
 curl "https://api.quranhub.com/v1/edition/audio/nationality/EG?narrator=quran-warsh"
 ```
 
-| Country | Code | Reciters | Audio editions |
-|---|---|---:|---:|
-| 🇸🇦 Saudi Arabia | `SA` | 65 | 65 |
-| 🇪🇬 Egypt | `EG` | 26 | 36 |
-| 🇰🇼 Kuwait | `KW` | 6 | 6 |
-| 🇾🇪 Yemen | `YE` | 6 | 6 |
-| 🇸🇾 Syria | `SY` | 5 | 6 |
-| 🇮🇶 Iraq | `IQ` | 4 | 4 |
-| 🇧🇭 Bahrain | `BH` | 3 | 3 |
-| 🇱🇾 Libya | `LY` | 3 | 3 |
-| 🇩🇿 Algeria | `DZ` | 2 | 2 |
-| 🇮🇷 Iran | `IR` | 2 | 2 |
-| 🇯🇴 Jordan | `JO` | 2 | 2 |
-| 🇲🇦 Morocco | `MA` | 2 | 2 |
-| 🇵🇰 Pakistan | `PK` | 2 | 2 |
-| 🇵🇸 Palestine | `PS` | 2 | 2 |
-| 🇶🇦 Qatar | `QA` | 2 | 5 |
-| 🇸🇩 Sudan | `SD` | 2 | 2 |
-| 🇦🇪 United Arab Emirates | `AE` | 2 | 2 |
-| 🇮🇳 India | `IN` | 1 | 1 |
-
 ### 📖 Special Features
 Advanced features for studying and understanding the Quran.
 
