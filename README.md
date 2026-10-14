@@ -172,7 +172,7 @@ Access audio recitations and reciter information.
 
 ### 🏳️ Reciters by Nationality
 
-Every audio reciter carries a `nationality` — `{"code": "KW", "en": "Kuwait", "ar": "الكويت"}` (ISO 3166-1 alpha-2 code plus the country name in English and Arabic) — returned with the reciter metadata (`imageUrl`, `shortDescription`) by the audio edition endpoints. It is `null` when a reciter's nationality could not be confirmed (4 of 151: two translation narrators and two non-person entries). Nationalities were checked against Quran Orb and independent biographical sources.
+Every audio reciter carries a `nationality` — `{"code": "KW", "en": "Kuwait", "ar": "الكويت"}` (ISO 3166-1 alpha-2 code plus the country name in English and Arabic) — returned with the reciter metadata (`imageUrl`, `shortDescription`) by the audio edition endpoints.
 
 | Endpoint | Description |
 |----------|-------------|
