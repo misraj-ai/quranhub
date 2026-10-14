@@ -12,7 +12,7 @@
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0%2B-red)](https://www.sqlalchemy.org/)
 [![Misraj AI](https://img.shields.io/badge/By-Misraj%20AI-gold)](https://misraj.ai)
 
-**A comprehensive REST API providing access to the Holy Quran in +540 editions across +90 languages**
+**A comprehensive REST API providing access to the Holy Quran in +550 editions across +90 languages**
 
 **Developed and Maintained by [Misraj AI](https://misraj.ai)**
 
@@ -35,18 +35,18 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 <td>
 
 **Content Coverage**
-- 📚 **+541** Total Editions  
+- 📚 **+551** Total Editions  
 - 📝 **+343** Text Editions  
-- 🔊 **+198** Audio Editions  
-- 📊 **+521,622** Audio Files  
+- 🔊 **+208** Audio Editions  
+- 📊 **+522,762** Audio Files  
 - 🎧 **+77,425** Word-by-Word Audio Clips (×2 bitrates)  
 - 🧠 **+77,433** Quranic Words Analyzed  
 - 🏷️ **+2,468** Unique Morphological Tags  
 - 🌿 **+1,805** Arabic Roots  
 - 🔁 **+2.5M** Word–Tag Associations  
-- 🎙️ **+141** Reciters  
+- 🎙️ **+151** Reciters  
 - 🌐 **+95** Languages  
-- 🏳️ **+18** Reciter Nationalities  
+- 🏳️ **+20** Reciter Nationalities  
 
 </td>
 
@@ -55,7 +55,7 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 **Edition Types**
 - 📖 **+157** Tafsir Editions
 - 🌍 **+166** Translations
-- 🎤 **+154** Surah Recitations
+- 🎤 **+164** Surah Recitations
 - 📤 **+12** Quran Scripts
 - 📿 **+43** Verse-by-Verse
 - 🎧 **1** Word-by-Word Audio
@@ -172,7 +172,7 @@ Access audio recitations and reciter information.
 
 ### 🏳️ Reciters by Nationality
 
-Every audio reciter carries a `nationality` — `{"code": "KW", "en": "Kuwait", "ar": "الكويت"}` (ISO 3166-1 alpha-2 code plus the country name in English and Arabic) — returned with the reciter metadata (`imageUrl`, `shortDescription`) by the audio edition endpoints. It is `null` when a reciter's nationality could not be confirmed (4 of 141: two translation narrators and two non-person entries). Nationalities were checked against Quran Orb and independent biographical sources.
+Every audio reciter carries a `nationality` — `{"code": "KW", "en": "Kuwait", "ar": "الكويت"}` (ISO 3166-1 alpha-2 code plus the country name in English and Arabic) — returned with the reciter metadata (`imageUrl`, `shortDescription`) by the audio edition endpoints. It is `null` when a reciter's nationality could not be confirmed (4 of 151: two translation narrators and two non-person entries). Nationalities were checked against Quran Orb and independent biographical sources.
 
 | Endpoint | Description |
 |----------|-------------|

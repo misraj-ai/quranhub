@@ -994,18 +994,18 @@ getEditionsAnalysisResponse = {
                     "status": "OK",
                     "data": {
                         "overview": {
-                            "totalEditions": 541,
+                            "totalEditions": 551,
                             "textEditions": 343,
-                            "audioEditions": 198,
-                            "totalAudioFiles": 521622
+                            "audioEditions": 208,
+                            "totalAudioFiles": 522762
                         },
                         "formats": {
                             "text": 343,
-                            "audio": 198
+                            "audio": 208
                         },
                         "types": {
                             "tafsir": 157,
-                            "surah": 154,
+                            "surah": 164,
                             "quran": 12,
                             "translation": 164,
                             "versebyverse": 43,
@@ -1015,9 +1015,9 @@ getEditionsAnalysisResponse = {
                         },
                         "languages": {
                             "ar": {
-                                "total": 262,
+                                "total": 272,
                                 "textEditions": 74,
-                                "audioEditions": 188,
+                                "audioEditions": 198,
                                 "textTypes": {
                                     "tafsir": 53,
                                     "quran": 12,
@@ -1025,7 +1025,7 @@ getEditionsAnalysisResponse = {
                                     "narration": 8
                                 },
                                 "audioTypes": {
-                                    "surah": 149,
+                                    "surah": 159,
                                     "versebyverse": 38,
                                     "wordbyword": 1
                                 }
@@ -1064,15 +1064,25 @@ getEditionsAnalysisResponse = {
                                 "textEditions": 1,
                                 "audioEditions": 162
                             },
-                            "quran-albazzi": {
-                                "totalEditions": 2,
+                            "quran-warsh": {
+                                "totalEditions": 17,
                                 "textEditions": 1,
-                                "audioEditions": 2
+                                "audioEditions": 17
+                            },
+                            "quran-qaloon": {
+                                "totalEditions": 12,
+                                "textEditions": 1,
+                                "audioEditions": 12
                             },
                             "quran-aldouri": {
-                                "totalEditions": 4,
+                                "totalEditions": 6,
                                 "textEditions": 1,
-                                "audioEditions": 4
+                                "audioEditions": 6
+                            },
+                            "quran-albazzi": {
+                                "totalEditions": 3,
+                                "textEditions": 1,
+                                "audioEditions": 3
                             },
                             "quran-shoba": {
                                 "totalEditions": 4,
@@ -1088,47 +1098,39 @@ getEditionsAnalysisResponse = {
                                 "totalEditions": 2,
                                 "textEditions": 1,
                                 "audioEditions": 2
-                            },
-                            "quran-warsh": {
-                                "totalEditions": 14,
-                                "textEditions": 1,
-                                "audioEditions": 14
-                            },
-                            "quran-qaloon": {
-                                "totalEditions": 8,
-                                "textEditions": 1,
-                                "audioEditions": 8
                             }
                         },
                         "reciters": {
-                            "totalUniqueReciters": 141,
+                            "totalUniqueReciters": 151,
                             "byNationality": {
                                 "SA": 65,
                                 "EG": 26,
                                 "KW": 6,
+                                "LY": 6,
                                 "YE": 6,
+                                "MA": 5,
                                 "SY": 5,
                                 "IQ": 4,
+                                "SD": 4,
                                 "BH": 3,
-                                "LY": 3,
+                                "AE": 2,
                                 "DZ": 2,
                                 "IR": 2,
                                 "JO": 2,
-                                "MA": 2,
                                 "PK": 2,
                                 "PS": 2,
                                 "QA": 2,
-                                "SD": 2,
-                                "AE": 2,
-                                "IN": 1
+                                "GH": 1,
+                                "IN": 1,
+                                "TN": 1
                             }
                         },
                         "audioAnalysis": {
                             "byLanguage": {
                                 "ar": {
-                                    "editionCount": 188,
+                                    "editionCount": 198,
                                     "types": {
-                                        "surah": 149,
+                                        "surah": 159,
                                         "versebyverse": 38,
                                         "wordbyword": 1
                                     },
@@ -1185,19 +1187,35 @@ getEditionsAnalysisResponse = {
                                     },
                                     "languageCount": 6
                                 },
-                                "quran-albazzi": {
-                                    "editionCount": 2,
+                                "quran-warsh": {
+                                    "editionCount": 17,
                                     "types": {
-                                        "surah": 1,
-                                        "versebyverse": 1
+                                        "surah": 10,
+                                        "versebyverse": 7
+                                    },
+                                    "languageCount": 1
+                                },
+                                "quran-qaloon": {
+                                    "editionCount": 12,
+                                    "types": {
+                                        "surah": 8,
+                                        "versebyverse": 4
                                     },
                                     "languageCount": 1
                                 },
                                 "quran-aldouri": {
-                                    "editionCount": 4,
+                                    "editionCount": 6,
+                                    "types": {
+                                        "surah": 4,
+                                        "versebyverse": 2
+                                    },
+                                    "languageCount": 1
+                                },
+                                "quran-albazzi": {
+                                    "editionCount": 3,
                                     "types": {
                                         "surah": 2,
-                                        "versebyverse": 2
+                                        "versebyverse": 1
                                     },
                                     "languageCount": 1
                                 },
@@ -1224,31 +1242,16 @@ getEditionsAnalysisResponse = {
                                         "versebyverse": 1
                                     },
                                     "languageCount": 1
-                                },
-                                "quran-warsh": {
-                                    "editionCount": 14,
-                                    "types": {
-                                        "surah": 7,
-                                        "versebyverse": 7
-                                    },
-                                    "languageCount": 1
-                                },
-                                "quran-qaloon": {
-                                    "editionCount": 8,
-                                    "types": {
-                                        "surah": 4,
-                                        "versebyverse": 4
-                                    },
-                                    "languageCount": 1
                                 }
                             },
                             "bitrates": {
-                                "uniqueBitrates": 11,
+                                "uniqueBitrates": 12,
                                 "availableBitrates": [
                                     16,
                                     32,
                                     40,
                                     48,
+                                    56,
                                     64,
                                     96,
                                     128,
@@ -1258,7 +1261,7 @@ getEditionsAnalysisResponse = {
                                     320
                                 ],
                                 "statistics": {
-                                    "average": 119.21,
+                                    "average": 120.14,
                                     "minimum": 16,
                                     "maximum": 320
                                 }
