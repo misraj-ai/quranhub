@@ -683,7 +683,7 @@ async def get_reciter_nationalities():
     tags=["Edition"],
     name="Get Audio Editions by Reciter Nationality",
     summary="List audio editions by reciter nationality",
-    description="Lists the audio editions (surah-level and verse-by-verse, one entry per edition identifier with its available `types` and bitrates) of the reciters of a nationality, given as a two-letter ISO 3166-1 alpha-2 country code such as `SA`, `EG` or `KW`. Optionally narrow by narration (`narrator`) or edition language. Each entry carries the reciter's `imageUrl`, `shortDescription` and `nationality`. Word-by-word is excluded. Use `/v1/edition/audio/nationality` to see the available country codes.",
+    description="Lists the audio editions (surah-level and verse-by-verse, one entry per edition identifier with its available `types` and bitrates) of the reciters of a nationality, given as a two-letter ISO 3166-1 alpha-2 country code such as `SA`, `EG` or `KW` (upper or lower case, so `kw` works too). Optionally narrow by narration (`narrator`) or edition language. Each entry carries the reciter's `imageUrl`, `shortDescription` and `nationality`. Word-by-word is excluded. Use `/v1/edition/audio/nationality` to see the available country codes.",
     openapi_extra={
         "x-agent-hints": "Call this endpoint to list reciters of a given nationality. Get the country codes from /v1/edition/audio/nationality. Optionally pass narrator (e.g. quran-hafs, quran-warsh) to narrow by narration.",
         "x-mcp-example": {
@@ -693,12 +693,13 @@ async def get_reciter_nationalities():
     }
 )
 async def get_audio_editions_by_reciter_nationality(
-    countryCode: str = Path(..., description="Two-letter ISO 3166-1 alpha-2 country code of the reciter's nationality (case-insensitive)", example="KW"),
+    countryCode: str = Path(..., description="Two-letter ISO 3166-1 alpha-2 country code of the reciter's nationality, in upper or lower case (e.g. `KW` or `kw`)", example="KW"),
     narrator: Optional[str] = Query(None, description="Only editions of this narration (e.g. 'quran-hafs', 'quran-warsh')", example="quran-hafs"),
     language: Optional[str] = Query(None, description="Filter by edition language code (e.g., 'ar', 'en', 'fa')", example="ar"),
     sortBy: Optional[str] = Query('ar', description="Sort by 'ar' (Arabic name) or 'en' (English name)", example='en'),
 ):
     try:
+        countryCode = countryCode.strip().upper()  # codes are accepted in upper or lower case
         if len(countryCode) != 2 or not countryCode.isalpha():
             response = JSONResponse(
                 content={"code": 400, "status": "Error", "data": "countryCode must be a two-letter ISO 3166-1 alpha-2 code (e.g. SA, EG, KW)"},
@@ -711,7 +712,7 @@ async def get_audio_editions_by_reciter_nationality(
         )
         if data == "not_found":
             response = JSONResponse(
-                content={"code": 404, "status": "Error", "data": f"No audio editions found for nationality '{countryCode.upper()}'"},
+                content={"code": 404, "status": "Error", "data": f"No audio editions found for nationality '{countryCode}'"},
                 status_code=404
             )
             response.headers["Cache-Control"] = "no-store"
@@ -724,7 +725,7 @@ async def get_audio_editions_by_reciter_nationality(
             response.headers["Cache-Control"] = "no-store"
             return response
         response = JSONResponse(content={"code": 200, "status": "OK", "data": data}, status_code=200)
-        add_cache_headers(response, cache_tag=f"edition:audio:nationality:{countryCode.upper()}")
+        add_cache_headers(response, cache_tag=f"edition:audio:nationality:{countryCode}")
         return response
     except Exception:
         logger.error("An exception occurred")

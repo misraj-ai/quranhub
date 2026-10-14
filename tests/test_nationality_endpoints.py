@@ -51,7 +51,19 @@ def test_success_passes_filters_through(monkeypatch):
     response = by_nationality("kw", narrator="quran-hafs")
     body = json.loads(response.body)
     assert response.status_code == 200 and body["data"][0]["identifier"] == "ar.alafasy.hafs"
-    assert seen == {"code": "kw", "narrator": "quran-hafs", "sort": "ar"}
+    assert seen == {"code": "KW", "narrator": "quran-hafs", "sort": "ar"}   # lower case input is normalised to upper case
+
+
+def test_code_case_and_spaces_are_normalised(monkeypatch):
+    seen = []
+
+    async def ok(code, **kw):
+        seen.append(code)
+        return [{"identifier": "ar.x.hafs"}]
+    monkeypatch.setattr(edition_repo, "get_audio_editions_by_nationality", ok)
+    for raw in ("kw", "KW", "Kw", " kW "):
+        assert by_nationality(raw).status_code == 200
+    assert seen == ["KW"] * 4
 
 
 def test_nationality_list_envelope(monkeypatch):
