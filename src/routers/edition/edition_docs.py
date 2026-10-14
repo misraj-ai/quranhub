@@ -830,6 +830,155 @@ getDistinctAudioEditionByIdentifierResponse = {
         }
     }
 }
+getTheAudioNationalitiesResponse = {
+    200: {
+        "description": "Successful Response - Nationalities of the reciters that have audio editions, with the number of reciters and audio editions for each",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 200,
+                    "status": "OK",
+                    "data": [
+                        {
+                            "code": "SA",
+                            "en": "Saudi Arabia",
+                            "ar": "السعودية",
+                            "reciters": 65,
+                            "editions": 65
+                        },
+                        {
+                            "code": "EG",
+                            "en": "Egypt",
+                            "ar": "مصر",
+                            "reciters": 26,
+                            "editions": 36
+                        },
+                        {
+                            "code": "KW",
+                            "en": "Kuwait",
+                            "ar": "الكويت",
+                            "reciters": 6,
+                            "editions": 6
+                        },
+                        {
+                            "code": "YE",
+                            "en": "Yemen",
+                            "ar": "اليمن",
+                            "reciters": 6,
+                            "editions": 6
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    400: {
+        "description": "Bad Request - Error occurred while fetching nationalities",
+        "content": {
+            "application/json": {
+                "example": {"code": 400, "status": "Error", "data": "Something went wrong: A database error occurred while fetching nationalities."}
+            }
+        }
+    }
+}
+
+getTheAudioEditionsByNationalityResponse = {
+    200: {
+        "description": "Successful Response - Audio editions of the reciters with the given nationality, one entry per edition identifier (`types` lists the available layouts and bitrates)",
+        "content": {
+            "application/json": {
+                "example": {
+                    "code": 200,
+                    "status": "OK",
+                    "data": [
+                        {
+                            "identifier": "ar.alafasy.hafs",
+                            "language": "ar",
+                            "name": "مشاري راشد العفاسي",
+                            "englishName": "Mishary Rashid Alafasy",
+                            "imageUrl": "https://quranhub.b-cdn.net/quran/images/reciters/alafasy.jpeg",
+                            "shortDescription": {
+                                "ar": "قارئ كويتي وإمام مسجد الكبير",
+                                "en": "Kuwaiti reciter and Imam of the Grand Mosque in Kuwait"
+                            },
+                            "nationality": {
+                                "code": "KW",
+                                "en": "Kuwait",
+                                "ar": "الكويت"
+                            },
+                            "format": "audio",
+                            "type": "versebyverse",
+                            "direction": "rtl",
+                            "narratorIdentifier": "quran-hafs",
+                            "recitationType": "murattal",
+                            "types": [
+                                {
+                                    "type": "versebyverse",
+                                    "bitrates": [
+                                        128,
+                                        64
+                                    ]
+                                },
+                                {
+                                    "type": "surah",
+                                    "bitrates": [
+                                        128
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "identifier": "ar.alkandari.hafs",
+                            "language": "ar",
+                            "name": "عبدالله الكندري",
+                            "englishName": "Abdullah Al-Kandari",
+                            "imageUrl": "https://quranhub.b-cdn.net/quran/images/reciters/abdullah-al-kandari.jpeg",
+                            "shortDescription": {
+                                "ar": "قارئ كويتي",
+                                "en": "Kuwaiti reciter"
+                            },
+                            "nationality": {
+                                "code": "KW",
+                                "en": "Kuwait",
+                                "ar": "الكويت"
+                            },
+                            "format": "audio",
+                            "type": "surah",
+                            "direction": None,
+                            "narratorIdentifier": "quran-hafs",
+                            "recitationType": "murattal",
+                            "types": [
+                                {
+                                    "type": "surah",
+                                    "bitrates": [
+                                        256
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    400: {
+        "description": "Bad Request - Invalid country code or an error occurred while fetching the editions",
+        "content": {
+            "application/json": {
+                "example": {"code": 400, "status": "Error", "data": "countryCode must be a two-letter ISO 3166-1 alpha-2 code (e.g. SA, EG, KW)"}
+            }
+        }
+    },
+    404: {
+        "description": "Not Found - No audio edition matches this nationality",
+        "content": {
+            "application/json": {
+                "example": {"code": 404, "status": "Error", "data": "No audio editions found for nationality 'XX'"}
+            }
+        }
+    }
+}
+
 """
 Response documentation for the Editions Analysis endpoint.
 Contains the comprehensive analysis response schema.
@@ -952,7 +1101,27 @@ getEditionsAnalysisResponse = {
                             }
                         },
                         "reciters": {
-                            "totalUniqueReciters": 141
+                            "totalUniqueReciters": 141,
+                            "byNationality": {
+                                "SA": 65,
+                                "EG": 26,
+                                "KW": 6,
+                                "YE": 6,
+                                "SY": 5,
+                                "IQ": 4,
+                                "BH": 3,
+                                "LY": 3,
+                                "DZ": 2,
+                                "IR": 2,
+                                "JO": 2,
+                                "MA": 2,
+                                "PK": 2,
+                                "PS": 2,
+                                "QA": 2,
+                                "SD": 2,
+                                "AE": 2,
+                                "IN": 1
+                            }
                         },
                         "audioAnalysis": {
                             "byLanguage": {

@@ -4,7 +4,7 @@ from sqlalchemy import select, case
 from sqlalchemy.exc import SQLAlchemyError
 from typing import Optional
 from db.session import AsyncSessionLocal
-from db.models import Edition  # Assuming Edition is in a models module
+from db.models import Edition, Reciter  # Assuming Edition is in a models module
 from utils.logger import logger  # Assuming you have a logger module
 from utils.config import (
     TAFSIR_BOOKS_LANGUAGES,
@@ -284,6 +284,85 @@ async def get_audio_editions_by_narrator(narrator_identifier: str, language=None
         return "An unexpected error occurred, please try again later."
 
 
+async def get_audio_nationalities():
+    """Nationalities of the reciters that have audio editions: code, names, number of reciters and editions."""
+    try:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(Edition)
+                .options(selectinload(Edition.reciter))
+                .filter(Edition.format == "audio", Edition.type != AUDIO_TYPE_WORDBYWORD)
+            )
+            editions = result.scalars().all()
+
+        countries = {}
+        for item in editions:
+            nat = item.reciter.nationality if item.reciter else None
+            if not isinstance(nat, dict) or not nat.get("code"):
+                continue
+            entry = countries.setdefault(nat["code"], {
+                "code": nat["code"], "en": nat.get("en"), "ar": nat.get("ar"),
+                "reciters": set(), "editions": set(),
+            })
+            entry["reciters"].add(item.reciter.id)
+            entry["editions"].add(item.identifier)
+
+        result_list = [
+            {**entry, "reciters": len(entry["reciters"]), "editions": len(entry["editions"])}
+            for entry in countries.values()
+        ]
+        result_list.sort(key=lambda c: (-c["reciters"], c["en"] or ""))
+        return result_list
+
+    except SQLAlchemyError as e:
+        logger.error(f"Database error in get_audio_nationalities: {str(e)}")
+        return "A database error occurred while fetching nationalities."
+    except Exception as e:
+        logger.error(f"An exception occurred in get_audio_nationalities: {str(e)}")
+        return "An unexpected error occurred, please try again later."
+
+
+async def get_audio_editions_by_nationality(country_code: str, narrator_identifier: Optional[str] = None, language: Optional[str] = None, sort_by: Optional[str] = None):
+    """Audio editions (surah and verse-by-verse, one entry per identifier) of reciters of a nationality.
+
+    Returns "not_found" when no reciter has that nationality (or none matches the optional filters).
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            query = (
+                select(Edition)
+                .join(Reciter, Edition.reciter_id == Reciter.id)
+                .options(selectinload(Edition.reciter))
+                .filter(
+                    Edition.format == "audio",
+                    Edition.type != AUDIO_TYPE_WORDBYWORD,
+                    Reciter.nationality["code"].as_string() == country_code.upper(),
+                )
+            )
+            if narrator_identifier:
+                query = query.filter(Edition.narrator_identifier == narrator_identifier)
+            if language:
+                query = query.filter(Edition.language == language)
+
+            sort_field = Edition.name['ar'].as_string()
+            if sort_by == 'en':
+                sort_field = Edition.name['en'].as_string()
+            query = query.order_by(case((Edition.language == 'ar', 0), else_=1), sort_field, Edition.identifier)
+            result = await session.execute(query)
+            items = result.scalars().all()
+
+        if not items:
+            return "not_found"
+        return _group_audio_editions_by_identifier(items)
+
+    except SQLAlchemyError as e:
+        logger.error(f"Database error in get_audio_editions_by_nationality: {str(e)}")
+        return "A database error occurred while fetching audio editions."
+    except Exception as e:
+        logger.error(f"An exception occurred in get_audio_editions_by_nationality: {str(e)}")
+        return "An unexpected error occurred, please try again later."
+
+
 def _format_default_edition(item):
     """Format a single default edition item."""
     item_name_dict = item.name if isinstance(item.name, dict) else {}
@@ -537,7 +616,8 @@ async def get_edition_analysis():
                 "languages": {},
                 "narrations": {},
                 "reciters": {
-                    "totalUniqueReciters": 0
+                    "totalUniqueReciters": 0,
+                    "byNationality": {}
                 },
                 "audioAnalysis": {
                     "byLanguage": {},
@@ -553,6 +633,7 @@ async def get_edition_analysis():
             # Track unique values
             all_bitrates = []
             reciter_counts = {}
+            reciter_nationalities = {}  # reciter id -> country code
             total_audio_files = 0  # New: sum of all audio files (per bitrate)
 
             # Process each edition
@@ -667,6 +748,9 @@ async def get_edition_analysis():
                     if reciter_id not in reciter_counts:
                         reciter_counts[reciter_id] = 0
                     reciter_counts[reciter_id] += 1
+                    nat = edition.reciter.nationality
+                    if isinstance(nat, dict) and nat.get("code"):
+                        reciter_nationalities[reciter_id] = nat["code"]
 
 
             # Finalize analysis
@@ -681,6 +765,10 @@ async def get_edition_analysis():
 
             # Reciter analysis - simplified
             analysis["reciters"]["totalUniqueReciters"] = len(reciter_counts)
+            by_nationality = {}
+            for code in reciter_nationalities.values():
+                by_nationality[code] = by_nationality.get(code, 0) + 1
+            analysis["reciters"]["byNationality"] = dict(sorted(by_nationality.items(), key=lambda kv: (-kv[1], kv[0])))
 
             # Total audio files: bitrates * 114 (surah), * 6236 (versebyverse), * words with audio (wordbyword)
             analysis["overview"]["totalAudioFiles"] = total_audio_files

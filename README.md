@@ -46,6 +46,7 @@ Quran Hub API is a powerful, feature-rich REST API developed by **Misraj AI** th
 - 🔁 **+2.5M** Word–Tag Associations  
 - 🎙️ **+141** Reciters  
 - 🌐 **+95** Languages  
+- 🏳️ **+18** Reciter Nationalities  
 
 </td>
 
@@ -164,8 +165,52 @@ Access audio recitations and reciter information.
 |------|-------------|---------------|
 | `get_distinct_audio_editions` | List unique audio reciters | - |
 | `get_all_narrator_identifiers` | Get all reciter identifiers | - |
+| `get_reciter_nationalities` | List the countries the reciters come from, with reciter and edition counts | - |
+| `get_audio_editions_by_reciter_nationality` | Audio editions of the reciters of a nationality (ISO country code; optional `narrator` and `language`) | `"KW"` or `countryCode: "EG", narrator: "quran-warsh"` |
 | `get_audio_editions_by_narrator` | All audio editions of a narration — verse-by-verse and surah-only reciters, each with its available `types` and bitrates | `"quran-hafs"` |
 | `get_word_audio` | Per-word pronunciation audio (word-by-word edition) | `"1:1:2"` or `"1:1"` |
+
+### 🏳️ Reciters by Nationality
+
+Every audio reciter carries a `nationality` — `{"code": "KW", "en": "Kuwait", "ar": "الكويت"}` (ISO 3166-1 alpha-2 code plus the country name in English and Arabic) — returned with the reciter metadata (`imageUrl`, `shortDescription`) by the audio edition endpoints. It is `null` when a reciter's nationality could not be confirmed (4 of 141: two translation narrators and two non-person entries). Nationalities were checked against Quran Orb and independent biographical sources.
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /v1/edition/audio/nationality` | The countries of the audio reciters, with the number of reciters and editions for each |
+| `GET /v1/edition/audio/nationality/{countryCode}` | Audio editions of the reciters of a nationality — surah and verse-by-verse, one entry per edition identifier with its available `types` and bitrates. Optional `narrator` (e.g. `quran-warsh`) and `language` filters |
+| `GET /v1/edition/analysis` | `reciters.byNationality` gives the number of reciters per country |
+
+```bash
+# which countries do the reciters come from?
+curl "https://api.quranhub.com/v1/edition/audio/nationality"
+
+# Kuwaiti reciters
+curl "https://api.quranhub.com/v1/edition/audio/nationality/KW"
+
+# Egyptian reciters of the Warsh narration
+curl "https://api.quranhub.com/v1/edition/audio/nationality/EG?narrator=quran-warsh"
+```
+
+| Country | Code | Reciters | Audio editions |
+|---|---|---:|---:|
+| 🇸🇦 Saudi Arabia | `SA` | 65 | 65 |
+| 🇪🇬 Egypt | `EG` | 26 | 36 |
+| 🇰🇼 Kuwait | `KW` | 6 | 6 |
+| 🇾🇪 Yemen | `YE` | 6 | 6 |
+| 🇸🇾 Syria | `SY` | 5 | 6 |
+| 🇮🇶 Iraq | `IQ` | 4 | 4 |
+| 🇧🇭 Bahrain | `BH` | 3 | 3 |
+| 🇱🇾 Libya | `LY` | 3 | 3 |
+| 🇩🇿 Algeria | `DZ` | 2 | 2 |
+| 🇮🇷 Iran | `IR` | 2 | 2 |
+| 🇯🇴 Jordan | `JO` | 2 | 2 |
+| 🇲🇦 Morocco | `MA` | 2 | 2 |
+| 🇵🇰 Pakistan | `PK` | 2 | 2 |
+| 🇵🇸 Palestine | `PS` | 2 | 2 |
+| 🇶🇦 Qatar | `QA` | 2 | 5 |
+| 🇸🇩 Sudan | `SD` | 2 | 2 |
+| 🇦🇪 United Arab Emirates | `AE` | 2 | 2 |
+| 🇮🇳 India | `IN` | 1 | 1 |
 
 ### 📖 Special Features
 Advanced features for studying and understanding the Quran.

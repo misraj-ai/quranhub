@@ -15,6 +15,8 @@ from .edition_docs import (
     getTheEditionByFormatResponse,
     getTheEditionByFormatAndTypeResponse,
     getTheAudioEditionByNarratorIdentifierResponse,
+    getTheAudioNationalitiesResponse,
+    getTheAudioEditionsByNationalityResponse,
     getEditionsAnalysisResponse,
     getTheEditionSubtypesByTypeResponse,
 )
@@ -631,6 +633,98 @@ async def get_audio_edition_by_narrator_identifier(
             status_code=200
         )
         add_cache_headers(response, cache_tag=f"edition:audio:narrator:{narratorIdentifier}")
+        return response
+    except Exception:
+        logger.error("An exception occurred")
+        response = JSONResponse(
+            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+            status_code=400
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+@edition_router.get(
+    "/audio/nationality",
+    responses=getTheAudioNationalitiesResponse,
+    tags=["Edition"],
+    name="Get Reciter Nationalities",
+    summary="List the nationalities of the audio reciters",
+    description="Lists every nationality that has at least one audio reciter: ISO 3166-1 alpha-2 `code`, English and Arabic country names, and how many reciters and audio editions there are for it. Ordered by number of reciters. Use the `code` with `/v1/edition/audio/nationality/{countryCode}` to list that country's reciters.",
+    openapi_extra={
+        "x-agent-hints": "Call this endpoint to discover which countries the reciters come from, then call /v1/edition/audio/nationality/{countryCode} to list the reciters of one country.",
+        "x-mcp-example": {"name": "get_reciter_nationalities_v1_edition_audio_nationality_get", "arguments": {}}
+    }
+)
+async def get_reciter_nationalities():
+    try:
+        data = await edition_repo.get_audio_nationalities()
+        if isinstance(data, str):
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
+                status_code=400
+            )
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        response = JSONResponse(content={"code": 200, "status": "OK", "data": data}, status_code=200)
+        add_cache_headers(response, cache_tag="edition:audio:nationality")
+        return response
+    except Exception:
+        logger.error("An exception occurred")
+        response = JSONResponse(
+            content={"code": 400, "status": "Error", "data": "Something went wrong"},
+            status_code=400
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+@edition_router.get(
+    "/audio/nationality/{countryCode}",
+    responses=getTheAudioEditionsByNationalityResponse,
+    tags=["Edition"],
+    name="Get Audio Editions by Reciter Nationality",
+    summary="List audio editions by reciter nationality",
+    description="Lists the audio editions (surah-level and verse-by-verse, one entry per edition identifier with its available `types` and bitrates) of the reciters of a nationality, given as a two-letter ISO 3166-1 alpha-2 country code such as `SA`, `EG` or `KW`. Optionally narrow by narration (`narrator`) or edition language. Each entry carries the reciter's `imageUrl`, `shortDescription` and `nationality`. Word-by-word is excluded. Use `/v1/edition/audio/nationality` to see the available country codes.",
+    openapi_extra={
+        "x-agent-hints": "Call this endpoint to list reciters of a given nationality. Get the country codes from /v1/edition/audio/nationality. Optionally pass narrator (e.g. quran-hafs, quran-warsh) to narrow by narration.",
+        "x-mcp-example": {
+            "name": "get_audio_editions_by_reciter_nationality_v1_edition_audio_nationality_countryCode_get",
+            "arguments": {"countryCode": "KW"}
+        }
+    }
+)
+async def get_audio_editions_by_reciter_nationality(
+    countryCode: str = Path(..., description="Two-letter ISO 3166-1 alpha-2 country code of the reciter's nationality (case-insensitive)", example="KW"),
+    narrator: Optional[str] = Query(None, description="Only editions of this narration (e.g. 'quran-hafs', 'quran-warsh')", example="quran-hafs"),
+    language: Optional[str] = Query(None, description="Filter by edition language code (e.g., 'ar', 'en', 'fa')", example="ar"),
+    sortBy: Optional[str] = Query('ar', description="Sort by 'ar' (Arabic name) or 'en' (English name)", example='en'),
+):
+    try:
+        if len(countryCode) != 2 or not countryCode.isalpha():
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": "countryCode must be a two-letter ISO 3166-1 alpha-2 code (e.g. SA, EG, KW)"},
+                status_code=400
+            )
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        data = await edition_repo.get_audio_editions_by_nationality(
+            countryCode, narrator_identifier=narrator, language=language, sort_by=sortBy
+        )
+        if data == "not_found":
+            response = JSONResponse(
+                content={"code": 404, "status": "Error", "data": f"No audio editions found for nationality '{countryCode.upper()}'"},
+                status_code=404
+            )
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        if isinstance(data, str):
+            response = JSONResponse(
+                content={"code": 400, "status": "Error", "data": f"Something went wrong: {data}"},
+                status_code=400
+            )
+            response.headers["Cache-Control"] = "no-store"
+            return response
+        response = JSONResponse(content={"code": 200, "status": "OK", "data": data}, status_code=200)
+        add_cache_headers(response, cache_tag=f"edition:audio:nationality:{countryCode.upper()}")
         return response
     except Exception:
         logger.error("An exception occurred")
